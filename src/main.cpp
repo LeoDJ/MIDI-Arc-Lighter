@@ -7,6 +7,9 @@
 
 #include "toneOutput.h"
 
+#include "tune.h"
+
+
 extern "C" {
     void SystemClock_Config(void);
 }
@@ -23,16 +26,16 @@ int main(void) {
     MX_USB_DEVICE_Init();
 
     toneOutputInit();
-    toneOutputWrite(0, 440);
-    toneOutputWrite(1, 880);
-    
+
     while (1) {
-        HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-        toneOutputWrite(0, 440);
-        HAL_Delay(100);
-        HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-        toneOutputWrite(0, 0);
-        HAL_Delay(100);
+        // HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+        // toneOutputWrite(0, 440);
+        // HAL_Delay(100);
+        // HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+        // toneOutputWrite(0, 0);
+        // HAL_Delay(100);
+
+        playTune();
     }
 }
 

@@ -9,6 +9,19 @@ extern "C" {
     void SystemClock_Config(void);
 }
 
+inline void pwmEnable() {
+    // htim1.Instance->CCR1 = PWM_PRESC * 66 / 100;
+    // htim1.Instance->CCR2 = PWM_PRESC * 33 / 100; // inverted channel, need to invert compare value too
+    htim1.Instance->CCR1 = PWM_PRESC / 2;
+    htim1.Instance->CCR2 = PWM_PRESC / 2;
+    
+}
+
+inline void pwmDisable() {
+    htim1.Instance->CCR1 = 0;
+    htim1.Instance->CCR2 = PWM_PRESC + 1;
+}
+
 int main(void) {
     HAL_Init();
     SystemClock_Config();
@@ -17,9 +30,17 @@ int main(void) {
     MX_ADC_Init();
     MX_TIM1_Init();
     MX_USB_DEVICE_Init();
+
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
     
     while (1) {
-        
+        HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+        pwmEnable();
+        HAL_Delay(100);
+        HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+        pwmDisable();
+        HAL_Delay(100);
     }
 }
 

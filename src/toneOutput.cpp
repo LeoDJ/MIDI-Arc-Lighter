@@ -40,7 +40,7 @@ void toneOutputWrite(uint8_t channel, uint16_t frequency) {
 
 inline void toggleCh1() {
     if (TONE_MODULATION_TIMER.Instance->CCR1 == 0) { // toggle PWM channel 1
-        TONE_MODULATION_TIMER.Instance->CCR1 = PWM_PRESC * 66 / 100;
+        TONE_MODULATION_TIMER.Instance->CCR1 = PWM_PRESC * PWM_DUTY_CYCLE / 100;
     }
     else {
         TONE_MODULATION_TIMER.Instance->CCR1 = 0;
@@ -49,7 +49,7 @@ inline void toggleCh1() {
 
 inline void toggleCh2() {
     if (TONE_MODULATION_TIMER.Instance->CCR2 == PWM_PRESC) { // toggle PWM channel 2 (inverted), off = max value
-        TONE_MODULATION_TIMER.Instance->CCR2 = PWM_PRESC * 33 / 100; // inverted
+        TONE_MODULATION_TIMER.Instance->CCR2 = PWM_PRESC * (100 - PWM_DUTY_CYCLE) / 100; // inverted
     }
     else {
         TONE_MODULATION_TIMER.Instance->CCR2 = PWM_PRESC; // inverted channel, off = max value

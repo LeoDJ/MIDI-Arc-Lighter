@@ -22,6 +22,26 @@ inline void pwmDisable() {
     htim1.Instance->CCR2 = PWM_PRESC + 1;
 }
 
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+    if (htim->Instance == TIM14) {
+        if(htim1.Instance->CCR1 == 0) { // toggle PWM channel 1
+            htim1.Instance->CCR1 = PWM_PRESC / 2;
+        }
+        else {
+            htim1.Instance->CCR1 = 0;
+        }
+    }
+
+    if (htim->Instance == TIM15) {
+        if(htim1.Instance->CCR2 == PWM_PRESC) { // toggle PWM channel 2 (inverted), off = max value
+            htim1.Instance->CCR2 = PWM_PRESC / 2;
+        }
+        else {
+            htim1.Instance->CCR2 = PWM_PRESC; // inverted channel, off = max value
+        }
+    }
+}
+
 int main(void) {
     HAL_Init();
     SystemClock_Config();
@@ -29,17 +49,30 @@ int main(void) {
     MX_GPIO_Init();
     MX_ADC_Init();
     MX_TIM1_Init();
+    MX_TIM14_Init();
+    MX_TIM15_Init();
     MX_USB_DEVICE_Init();
 
     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+    pwmDisable();
+
+    HAL_TIM_Base_Start_IT(&htim14);
+    HAL_TIM_Base_Start_IT(&htim15);
+    TIM14->CNT = 0;
+    TIM15->CNT = 0;
+    TIM14->ARR = NOTE_FREQ / 2 / 440;
+    TIM15->ARR = NOTE_FREQ / 2 / 880;
+    __HAL_TIM_ENABLE(&htim14);
+    __HAL_TIM_ENABLE(&htim15);
+
     
     while (1) {
         HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-        pwmEnable();
+        // pwmEnable();
         HAL_Delay(100);
         HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-        pwmDisable();
+        // pwmDisable();
         HAL_Delay(100);
     }
 }

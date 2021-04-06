@@ -92,6 +92,8 @@ int main(void)
   MX_ADC_Init();
   MX_TIM1_Init();
   MX_USB_DEVICE_Init();
+  MX_TIM14_Init();
+  MX_TIM15_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */

@@ -22,22 +22,63 @@ inline void pwmDisable() {
     htim1.Instance->CCR2 = PWM_PRESC + 1;
 }
 
+bool toggleCh1OnNextTimerUpdate = false;
+bool toggleCh2OnNextTimerUpdate = false;
+
+inline void toggleCh1() {
+    if (htim1.Instance->CCR1 == 0) { // toggle PWM channel 1
+        htim1.Instance->CCR1 = PWM_PRESC * 66 / 100;
+    }
+    else {
+        htim1.Instance->CCR1 = 0;
+    }
+}
+
+inline void toggleCh2() {
+    if (htim1.Instance->CCR2 == PWM_PRESC) { // toggle PWM channel 2 (inverted), off = max value
+        htim1.Instance->CCR2 = PWM_PRESC * 33 / 100; // inverted
+    }
+    else {
+        htim1.Instance->CCR2 = PWM_PRESC; // inverted channel, off = max value
+    }
+}
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-    if (htim->Instance == TIM14) {
-        if(htim1.Instance->CCR1 == 0) { // toggle PWM channel 1
-            htim1.Instance->CCR1 = PWM_PRESC / 2;
+    if (htim->Instance == TIM1) {
+        if (toggleCh1OnNextTimerUpdate) {
+            toggleCh1OnNextTimerUpdate = false;
+            toggleCh1();
         }
-        else {
-            htim1.Instance->CCR1 = 0;
+        else if (toggleCh2OnNextTimerUpdate) {
+            toggleCh2OnNextTimerUpdate = false;
+            toggleCh2();
         }
+        return;
     }
 
-    if (htim->Instance == TIM15) {
-        if(htim1.Instance->CCR2 == PWM_PRESC) { // toggle PWM channel 2 (inverted), off = max value
-            htim1.Instance->CCR2 = PWM_PRESC / 2;
+    bool downcounting = htim1.Instance->CR1 & TIM_CR1_DIR;
+    if (htim->Instance == TIM14) {
+        if(downcounting) {
+            /**
+             * Because of center aligned PWM, the capture compare register values would be loaded 
+             * at an inconvenient time, despite having CCR preload enabled.
+             * This is because center aligned PWM will generate an update event every time it switches counting directions.
+             * So the preloaded CCR value will be transferred into the CCR register on the next update, despite the direction.
+             * This leads to glitched PWM pulses with only half the supposed length.
+             * The workaround is to wait for the next TIM1 update event and toggle the PWM channel then.
+             */
+            toggleCh1OnNextTimerUpdate = true;
         }
         else {
-            htim1.Instance->CCR2 = PWM_PRESC; // inverted channel, off = max value
+            toggleCh1();
+        }
+    }
+    else if (htim->Instance == TIM15) {
+        if(!downcounting) {
+            toggleCh2OnNextTimerUpdate = true;
+        }
+        else {
+            toggleCh2();
         }
     }
 }
@@ -53,6 +94,7 @@ int main(void) {
     MX_TIM15_Init();
     MX_USB_DEVICE_Init();
 
+    HAL_TIM_Base_Start_IT(&htim1);
     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
     pwmDisable();
@@ -69,10 +111,8 @@ int main(void) {
     
     while (1) {
         HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-        // pwmEnable();
         HAL_Delay(100);
         HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-        // pwmDisable();
         HAL_Delay(100);
     }
 }

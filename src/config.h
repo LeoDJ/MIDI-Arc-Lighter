@@ -3,6 +3,9 @@
 #define PWM_FREQ    15800   // Hz
 #define NOTE_FREQ   1000000 // Hz, accuracy of note timers
 
+#define TONE_MODULATION_TIMER   htim1
+#define TONE_CH1_TIMER          htim14
+#define TONE_CH2_TIMER          htim15
 
 
 // generated defines

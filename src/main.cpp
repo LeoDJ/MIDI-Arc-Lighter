@@ -8,6 +8,7 @@
 #include "toneOutput.h"
 
 #include "tune.h"
+#include "usbd_cdc_if.h"
 
 
 extern "C" {
@@ -23,19 +24,24 @@ int main(void) {
     MX_TIM1_Init();
     MX_TIM14_Init();
     MX_TIM15_Init();
+    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
     MX_USB_DEVICE_Init();
+    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 
-    toneOutputInit();
+    // toneOutputInit();
+    // toneOutputWrite(0, 20);
+    // toneOutputWrite(1, 20);
 
     while (1) {
         // HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
         // toneOutputWrite(0, 440);
-        // HAL_Delay(100);
-        // HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+        HAL_Delay(200);
+        HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+        CDC_Transmit_FS((uint8_t *)".", 2);
         // toneOutputWrite(0, 0);
         // HAL_Delay(100);
 
-        playTune();
+        // playTune();
     }
 }
 
@@ -85,6 +91,10 @@ void Error_Handler(void) {
     /* USER CODE BEGIN Error_Handler_Debug */
     /* User can add his own implementation to report the HAL error return state
      */
+    while(1) {
+        HAL_Delay(50);
+        HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+    }
 
     /* USER CODE END Error_Handler_Debug */
 }

@@ -7,14 +7,17 @@ bool toggleCh2OnNextTimerUpdate = false;
 
 
 void toneOutputInit() {
-    HAL_TIM_Base_Start_IT(&TONE_MODULATION_TIMER);
-    HAL_TIM_PWM_Start(&TONE_MODULATION_TIMER, TIM_CHANNEL_1);
-    HAL_TIM_PWM_Start(&TONE_MODULATION_TIMER, TIM_CHANNEL_2);
-
+    // need to initialize the tone timers first, so they don't trigger an interrupt and switch on the arc on init
     HAL_TIM_Base_Start_IT(&TONE_CH1_TIMER);
     HAL_TIM_Base_Start_IT(&TONE_CH2_TIMER);
     TONE_CH1_TIMER.Instance->CR1 &= ~TIM_CR1_CEN;   // disable timer
     TONE_CH2_TIMER.Instance->CR1 &= ~TIM_CR1_CEN;
+
+    HAL_TIM_Base_Start_IT(&TONE_MODULATION_TIMER);
+    HAL_TIM_PWM_Start(&TONE_MODULATION_TIMER, TIM_CHANNEL_1);
+    TONE_MODULATION_TIMER.Instance->CCR1 = 0;
+    HAL_TIM_PWM_Start(&TONE_MODULATION_TIMER, TIM_CHANNEL_2);
+    TONE_MODULATION_TIMER.Instance->CCR2 = PWM_PRESC; // inverted channel, off = max value
 }
 
 const TIM_HandleTypeDef *toneTimers[] = {&TONE_CH1_TIMER, &TONE_CH2_TIMER};
@@ -57,7 +60,7 @@ inline void toggleCh2() {
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-    if (htim->Instance == TIM1) {
+    if (htim->Instance == TONE_MODULATION_TIMER.Instance) {
         if (toggleCh1OnNextTimerUpdate) {
             toggleCh1OnNextTimerUpdate = false;
             toggleCh1();
@@ -70,7 +73,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     }
 
     bool downcounting = TONE_MODULATION_TIMER.Instance->CR1 & TIM_CR1_DIR;
-    if (htim->Instance == TIM14) {
+    if (htim->Instance == TONE_CH1_TIMER.Instance) {
         if(downcounting) {
             /**
              * Because of center aligned PWM, the capture compare register values would be loaded 
@@ -86,7 +89,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
             toggleCh1();
         }
     }
-    else if (htim->Instance == TIM15) {
+    else if (htim->Instance == TONE_CH2_TIMER.Instance) {
         if(!downcounting) {
             toggleCh2OnNextTimerUpdate = true;
         }

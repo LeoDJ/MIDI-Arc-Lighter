@@ -27,6 +27,7 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include  "usbd_ioreq.h"
+#include "usbd_composite.h"
 
 /** @addtogroup STM32_USB_DEVICE_LIBRARY
   * @{
@@ -41,9 +42,12 @@ extern "C" {
 /** @defgroup usbd_cdc_Exported_Defines
   * @{
   */
-#define CDC_IN_EP                                   0x81U  /* EP1 for data IN */
-#define CDC_OUT_EP                                  0x01U  /* EP1 for data OUT */
-#define CDC_CMD_EP                                  0x82U  /* EP2 for CDC commands */
+// #define CDC_IN_EP                                   0x81U  /* EP1 for data IN */
+// #define CDC_OUT_EP                                  0x01U  /* EP1 for data OUT */
+// #define CDC_CMD_EP                                  0x82U  /* EP2 for CDC commands */
+#define CDC_IN_EP                                   COMP_EP_IDX_CDC_IN  /* EP1 for data IN */
+#define CDC_OUT_EP                                  COMP_EP_IDX_CDC  /* EP1 for data OUT */
+#define CDC_CMD_EP                                  COMP_EP_IDX_CDC_CMD_IN  /* EP2 for CDC commands */
 
 #ifndef CDC_HS_BINTERVAL
 #define CDC_HS_BINTERVAL                          0x10U

@@ -27,7 +27,7 @@
 #include "usbd_cdc.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "usbd_composite.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -332,14 +332,19 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
   HAL_PCD_RegisterIsoInIncpltCallback(&hpcd_USB_FS, PCD_ISOINIncompleteCallback);
 #endif /* USE_HAL_PCD_REGISTER_CALLBACKS */
   /* USER CODE BEGIN EndPoint_Configuration */
-  HAL_PCDEx_PMAConfig(pdev->pPCDHandle , 0x00 , PCD_SNG_BUF, 0x18);
-  HAL_PCDEx_PMAConfig(pdev->pPCDHandle , 0x80 , PCD_SNG_BUF, 0x58);
+
+  uint32_t pmaAddr = 0; // tiny hack to make the offsets more readable
+  HAL_PCDEx_PMAConfig(pdev->pPCDHandle , 0x00 , PCD_SNG_BUF, pmaAddr += 0x18);  // 0x18
+  HAL_PCDEx_PMAConfig(pdev->pPCDHandle , 0x80 , PCD_SNG_BUF, pmaAddr += 0x40);  // 0x58
   /* USER CODE END EndPoint_Configuration */
   /* USER CODE BEGIN EndPoint_Configuration_CDC */
-  HAL_PCDEx_PMAConfig(pdev->pPCDHandle , 0x81 , PCD_SNG_BUF, 0xC0);
-  HAL_PCDEx_PMAConfig(pdev->pPCDHandle , 0x01 , PCD_SNG_BUF, 0x110);
-  HAL_PCDEx_PMAConfig(pdev->pPCDHandle , 0x82 , PCD_SNG_BUF, 0x100);
+  HAL_PCDEx_PMAConfig(pdev->pPCDHandle , COMP_EP_IDX_CDC_IN,      PCD_SNG_BUF, pmaAddr = 0x0C0);  // 0x0C0
+  HAL_PCDEx_PMAConfig(pdev->pPCDHandle , COMP_EP_IDX_CDC_CMD_IN,  PCD_SNG_BUF, pmaAddr += 0x40);  // 0x100
+  HAL_PCDEx_PMAConfig(pdev->pPCDHandle , COMP_EP_IDX_CDC,         PCD_SNG_BUF, pmaAddr += 0x10);  // 0x110
   /* USER CODE END EndPoint_Configuration_CDC */
+  HAL_PCDEx_PMAConfig(pdev->pPCDHandle , COMP_EP_IDX_MIDI_IN,     PCD_SNG_BUF, pmaAddr += 0x40);  // 0x150
+  HAL_PCDEx_PMAConfig(pdev->pPCDHandle , COMP_EP_IDX_MIDI,        PCD_SNG_BUF, pmaAddr += 0x40);  // 0x190
+
   return USBD_OK;
 }
 

@@ -260,10 +260,12 @@ typedef struct _USBD_HandleTypeDef
   // void                    *pClassData;
   // void                    *pUserData;
   // void                    *pData;
-  
+
   // Sadly I can't use the USBD_CDC_HandleTypeDef pointers directly as this would apparently cause a circular typedef dependency? TODO: investigate further
   void                    *pClassDataCDC;               // USBD_CDC_HandleTypeDef
   void                    *pClassSpecificInterfaceCDC;  // USBD_CDC_ItfTypeDef
+  void                    *pClassSpecificInterfaceMIDI; // USBD_MIDI_ItfTypeDef
+  
   PCD_HandleTypeDef       *pPCDHandle;
 } USBD_HandleTypeDef;
 

@@ -150,6 +150,8 @@ __ALIGN_BEGIN static uint8_t USBD_CDC_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_
   * @{
   */
 
+// statically allocate cdc instance instead of USB "malloc"
+USBD_CDC_HandleTypeDef cdcInstance;
 
 /* CDC interface class callbacks structure */
 USBD_ClassTypeDef  USBD_CDC =
@@ -506,7 +508,7 @@ static uint8_t  USBD_CDC_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
   USBD_LL_OpenEP(pdev, CDC_CMD_EP, USBD_EP_TYPE_INTR, CDC_CMD_PACKET_SIZE);
   pdev->ep_in[CDC_CMD_EP & 0xFU].is_used = 1U;
 
-  pdev->pClassDataCDC = USBD_malloc(sizeof(USBD_CDC_HandleTypeDef));
+  pdev->pClassDataCDC = &cdcInstance;
 
   if (pdev->pClassDataCDC == NULL)
   {
@@ -566,7 +568,7 @@ static uint8_t  USBD_CDC_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
   if (pdev->pClassDataCDC != NULL)
   {
     ((USBD_CDC_ItfTypeDef *)pdev->pClassSpecificInterfaceCDC)->DeInit();
-    USBD_free(pdev->pClassDataCDC);
+    // USBD_free(pdev->pClassDataCDC);
     pdev->pClassDataCDC = NULL;
   }
 

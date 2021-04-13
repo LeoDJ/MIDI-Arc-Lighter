@@ -459,7 +459,8 @@ USBD_StatusTypeDef USBD_LL_Reset(USBD_HandleTypeDef *pdev)
   pdev->dev_config = 0U;
   pdev->dev_remote_wakeup = 0U;
 
-  if (pdev->pClassData)
+  // check any pClassData as all are initialized together
+  if (pdev->pClassDataCDC)
   {
     pdev->pClass->DeInit(pdev, (uint8_t)pdev->dev_config);
   }

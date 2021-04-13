@@ -255,9 +255,16 @@ typedef struct _USBD_HandleTypeDef
   USBD_SetupReqTypedef    request;
   USBD_DescriptorsTypeDef *pDesc;
   USBD_ClassTypeDef       *pClass;
-  void                    *pClassData;
-  void                    *pUserData;
-  void                    *pData;
+
+  // replace generic pointers with per class pointers. Else the composite device wouldn't work
+  // void                    *pClassData;
+  // void                    *pUserData;
+  // void                    *pData;
+  
+  // Sadly I can't use the USBD_CDC_HandleTypeDef pointers directly as this would apparently cause a circular typedef dependency? TODO: investigate further
+  void                    *pClassDataCDC;               // USBD_CDC_HandleTypeDef
+  void                    *pClassSpecificInterfaceCDC;  // USBD_CDC_ItfTypeDef
+  PCD_HandleTypeDef       *pPCDHandle;
 } USBD_HandleTypeDef;
 
 /**

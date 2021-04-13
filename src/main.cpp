@@ -1,18 +1,35 @@
 
 #include "main.h"
+
+#include <errno.h>
+#include <sys/unistd.h>
+
 #include "adc.h"
 #include "gpio.h"
 #include "tim.h"
 #include "usb_device.h"
-
-#include "toneOutput.h"
-
-#include "tune.h"
+#include "usart.h"
 #include "usbd_cdc_if.h"
+
+#include "config.h"
+#include "toneOutput.h"
+#include "tune.h"
 
 
 extern "C" {
     void SystemClock_Config(void);
+
+
+    // enable printf functionality on PRINTF_UART
+    int _write(int file, char *data, int len) {
+        if ((file != STDOUT_FILENO) && (file != STDERR_FILENO)) {
+            errno = EBADF;
+            return -1;
+        }
+
+        HAL_StatusTypeDef status = HAL_UART_Transmit(&PRINTF_UART, (uint8_t *)data, len, 1000);
+        return (status == HAL_OK ? len : 0);
+    }
 }
 
 int main(void) {
@@ -24,9 +41,12 @@ int main(void) {
     MX_TIM1_Init();
     MX_TIM14_Init();
     MX_TIM15_Init();
-    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+    MX_USART1_UART_Init();
+
+    HAL_Delay(50); // delay needed for new device to enumerate after DFU upload
     MX_USB_DEVICE_Init();
-    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+
+    printf("Hello World!\n");
 
     // toneOutputInit();
     // toneOutputWrite(0, 20);
@@ -75,7 +95,8 @@ void SystemClock_Config(void) {
     if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK) {
         Error_Handler();
     }
-    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
+    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB|RCC_PERIPHCLK_USART1;
+    PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK1;
     PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
 
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) {

@@ -8,6 +8,7 @@
 #define TONE_CH1_TIMER          htim14
 #define TONE_CH2_TIMER          htim15
 
+#define PRINTF_UART             huart1
 
 // generated defines
 #define PWM_PRESC   ((F_CPU / PWM_FREQ / 2) - 1) // /2 because of center alignment

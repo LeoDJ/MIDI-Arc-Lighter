@@ -20,9 +20,9 @@ extern "C" {
 #define COMP_EP_IDX_CDC             0x02
 #define COMP_EP_IDX_CDC_CMD         0x03
 
-#define COMP_EP_IDX_CDC_IN          COMP_EP_IDX_CDC | IN_EP_DIR
-#define COMP_EP_IDX_CDC_CMD_IN      COMP_EP_IDX_CDC_CMD | IN_EP_DIR
-#define COMP_EP_IDX_MIDI_IN         COMP_EP_IDX_MIDI | IN_EP_DIR
+#define COMP_EP_IDX_CDC_IN          (COMP_EP_IDX_CDC | IN_EP_DIR)
+#define COMP_EP_IDX_CDC_CMD_IN      (COMP_EP_IDX_CDC_CMD | IN_EP_DIR)
+#define COMP_EP_IDX_MIDI_IN         (COMP_EP_IDX_MIDI | IN_EP_DIR)
 
 
 

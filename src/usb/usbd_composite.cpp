@@ -303,17 +303,17 @@ static uint8_t USBD_Composite_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_DESC] =
     * @retval status
     */
 static uint8_t USBD_Composite_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx) {
-    printf("[USB Init] ");
+    USBD_DbgLog("[USB Init] ");
     uint8_t ret = 0;
     ret = USBD_CDC.Init(pdev, cfgidx);
-    printf("CDC: %d ", ret);
+    USBD_DbgLog("CDC: %d ", ret);
     if (ret != USBD_OK)
         return ret;
     ret = USBD_MIDI.Init(pdev, cfgidx);
-    printf("MIDI: %d ", ret);
+    USBD_DbgLog("MIDI: %d ", ret);
     if (ret != USBD_OK)
         return ret;
-    printf("\n");
+    USBD_DbgLog("\n");
     
     return USBD_OK;
 }
@@ -326,7 +326,7 @@ static uint8_t USBD_Composite_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx) {
     * @retval status
     */
 static uint8_t USBD_Composite_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx) {
-    printf("[USB Deinit]\n");
+    USBD_DbgLog("[USB Deinit]\n");
     USBD_CDC.DeInit(pdev, cfgidx);
     USBD_MIDI.DeInit(pdev, cfgidx);
     return USBD_OK;
@@ -378,7 +378,7 @@ static uint8_t USBD_Composite_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTyped
     //     return USBD_CDC_Setup(pdev, req);
     // }
 
-    printf("[USB Setup] dev: %d, recipient: %d, index: %d\n", pdev->id, recipient, req->wIndex);
+    USBD_DbgLog("[USB Setup] dev: %d, recipient: %d, index: %d\n", pdev->id, recipient, req->wIndex);
 
     if (recipient == USB_REQ_RECIPIENT_INTERFACE) {
         switch (req->wIndex) {
@@ -411,7 +411,7 @@ static uint8_t USBD_Composite_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTyped
     * @retval pointer to descriptor buffer
     */
 static uint8_t *USBD_Composite_GetCfgDesc(uint16_t *length) {
-    printf("[USB GetCfgDesc]\n");
+    USBD_DbgLog("[USB GetCfgDesc]\n");
     *length = sizeof(USBD_Composite_CfgDesc);
     return USBD_Composite_CfgDesc;
 }
@@ -423,7 +423,7 @@ static uint8_t *USBD_Composite_GetCfgDesc(uint16_t *length) {
 * @retval pointer to descriptor buffer
 */
 uint8_t *USBD_Composite_DeviceQualifierDescriptor(uint16_t *length) {
-    printf("[USB DevQualDesc]\n");
+    USBD_DbgLog("[USB DevQualDesc]\n");
     *length = sizeof(USBD_Composite_DeviceQualifierDesc);
     return USBD_Composite_DeviceQualifierDesc;
 }
@@ -437,7 +437,7 @@ uint8_t *USBD_Composite_DeviceQualifierDescriptor(uint16_t *length) {
     * @retval status
     */
 static uint8_t USBD_Composite_DataIn(USBD_HandleTypeDef *pdev, uint8_t epnum) {
-    printf("[USB DataIn] EP: %d\n", epnum);
+    USBD_DbgLog("[USB DataIn] EP: %d\n", epnum);
 
     switch(epnum) {
         case COMP_EP_IDX_CDC:
@@ -458,7 +458,7 @@ static uint8_t USBD_Composite_DataIn(USBD_HandleTypeDef *pdev, uint8_t epnum) {
     * @retval status
     */
 static uint8_t USBD_Composite_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum) {
-    printf("[USB DataOut] EP: %d\n", epnum);
+    USBD_DbgLog("[USB DataOut] EP: %d\n", epnum);
 
     switch(epnum) {
         case COMP_EP_IDX_CDC:
@@ -478,7 +478,7 @@ static uint8_t USBD_Composite_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum) {
     * @retval status
     */
 static uint8_t USBD_Composite_EP0_RxReady(USBD_HandleTypeDef *pdev) {
-    printf("[USB EP0_RxReady]\n");
+    USBD_DbgLog("[USB EP0_RxReady]\n");
     // no nice way to differentiate between classes, hopefully only CDC needs this handler
     return USBD_CDC.EP0_RxReady(pdev);
 }

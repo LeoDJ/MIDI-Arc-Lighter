@@ -1,57 +1,41 @@
-/**
-  ******************************************************************************
-  * @file           : usbd_midi_if.c
-  * @brief          :
-  ******************************************************************************
-
-    (CC at)2016 by D.F.Mac. @TripArts Music
-
-*/
-
-/* Includes ------------------------------------------------------------------*/
 #include "usbd_midi_if.h"
-// #include "queue32.h"
 #include "stm32f0xx_hal.h"
 
-// basic midi rx/tx functions
-static uint16_t MIDI_DataRx(uint8_t *msg, uint16_t length);
-static uint16_t MIDI_DataTx(uint8_t *msg, uint16_t length);
+// Baisc MIDI RX/TX functions
+static uint16_t midiRx(uint8_t *msg, uint16_t length);
+static uint16_t midiTx(uint8_t *msg, uint16_t length);
 
-// from mi:muz (Internal)
-// stB4Arrq rxq;
+inline void parseMidiPacket(uint8_t *pkt);
 
+// callback variables
 void (*cbNoteOff)(uint8_t ch, uint8_t note, uint8_t vel);
 void (*cbNoteOn)(uint8_t ch, uint8_t note, uint8_t vel);
 void (*cbCtlChange)(uint8_t ch, uint8_t num, uint8_t value);
 
-static int checkMidiMessage(uint8_t *pMidi);
+USBD_MIDI_ItfTypeDef USBD_MIDI_Interface_fops_FS = {
+    midiRx, 
+    midiTx
+};
 
-USBD_MIDI_ItfTypeDef USBD_MIDI_Interface_fops_FS = {MIDI_DataRx, MIDI_DataTx};
+static uint16_t midiRx(uint8_t *msg, uint16_t length) {
+    // printf("[MIDI RX] ");
+    // for (int i = 0; i < length; i++) {
+    //     printf("%02X ", msg[i]);
+    // }
+    // printf("\n");
 
-static uint16_t MIDI_DataRx(uint8_t *msg, uint16_t length) {
-    uint16_t cnt;
-    uint16_t msgs = length / 4;
-    uint16_t chk = length % 4;
-    if (chk == 0) {
-        for (cnt = 0; cnt < msgs; cnt++) {
-            // b4arrq_push(&rxq, ((uint32_t *)msg) + cnt);
+    // only handle 4 byte long usb midi packets
+    if (length % 4 == 0) {
+        for (uint16_t i = 0; i < length / 4; i++) {
+            // directly parse midi message and call respective callbacks
+            // hopefully this doesn't stall the USB interrupt too long
+            parseMidiPacket(msg + i * 4);
         }
     }
     return 0;
 }
 
-void sendMidiMessage(uint8_t *msg, uint16_t size) {
-    if (size == 4) {
-        //	APP_Rx_Buffer[0] = msg[0];
-        //	APP_Rx_Buffer[1] = msg[1];
-        //	APP_Rx_Buffer[2] = msg[2];
-        //	APP_Rx_Buffer[3] = msg[3];
-        //    USBD_MIDI_SendData(&hUsbDeviceFS, APP_Rx_Buffer, size);
-        MIDI_DataTx(msg, size);
-    }
-}
-
-static uint16_t MIDI_DataTx(uint8_t *msg, uint16_t length) {
+static uint16_t midiTx(uint8_t *msg, uint16_t length) {
     uint32_t i = 0;
     while (i < length) {
         APP_Rx_Buffer[APP_Rx_ptr_in] = *(msg + i);
@@ -64,92 +48,79 @@ static uint16_t MIDI_DataTx(uint8_t *msg, uint16_t length) {
     return USBD_OK;
 }
 
-// from mi:muz (Internal)
-static int checkMidiMessage(uint8_t *pMidi) {
-    if (((*(pMidi + 1) & 0xf0) == 0x90) && (*(pMidi + 3) != 0)) {
-        return 2;
-    } 
-    else if (((*(pMidi + 1) & 0xf0) == 0x90) && (*(pMidi + 3) == 0)) {
-        return 1;
-    } 
-    else if ((*(pMidi + 1) & 0xf0) == 0x80) {
-        return 1;
-    } 
-    else if ((*(pMidi + 1) & 0xf0) == 0xb0) {
-        return 3;
-    } 
-    else {
-        return 0;
-    }
-}
-
-// from mi:muz (Interface functions)
-static uint8_t buffer[4];
-
-void mimuz_init(void) { 
-    // b4arrq_init(&rxq); 
-}
-
-void setHdlNoteOff(void (*fptr)(uint8_t ch, uint8_t note, uint8_t vel)) {
-    cbNoteOff = fptr;
-}
-
-void setHdlNoteOn(void (*fptr)(uint8_t ch, uint8_t note, uint8_t vel)) {
-    cbNoteOn = fptr;
-}
-
-void setHdlCtlChange(void (*fptr)(uint8_t ch, uint8_t num, uint8_t value)) {
-    cbCtlChange = fptr;
-}
-
-void sendNoteOn(uint8_t ch, uint8_t note, uint8_t vel) {
-    buffer[0] = 0x09;
-    buffer[1] = 0x90 | ch;
-    buffer[2] = 0x7f & note;
-    buffer[3] = 0x7f & vel;
-    sendMidiMessage(buffer, 4);
-}
-
-void sendNoteOff(uint8_t ch, uint8_t note) {
-    buffer[0] = 0x08;
-    buffer[1] = 0x80 | ch;
-    buffer[2] = 0x7f & note;
-    buffer[3] = 0;
-    sendMidiMessage(buffer, 4);
-}
-
-void sendCtlChange(uint8_t ch, uint8_t num, uint8_t value) {
-    buffer[0] = 0x0b;
-    buffer[1] = 0xb0 | ch;
-    buffer[2] = 0x7f & num;
-    buffer[3] = 0x7f & value;
-    sendMidiMessage(buffer, 4);
-}
-
-void processMidiMessage() {
-    uint8_t *pbuf;
-    uint8_t kindmessage;
-    // Rx
-    if (/*rxq.num >*/ 0) {
-        // pbuf = (uint8_t *)b4arrq_pop(&rxq);
-        kindmessage = checkMidiMessage(pbuf);
-        if (kindmessage == 1) {
+void parseMidiPacket(usbMidiEvent_t *pkt) {
+    midiMessage_t midi = pkt->midiMsg;
+    // printf("Parse MIDI packet: %02X %02X %02X %02X, status: %02X\n", pkt->raw8[0], pkt->raw8[1], pkt->raw8[2], pkt->raw8[3], midi.status);
+    switch (midi.status) {
+        case MidiStatus::NoteOff:
             if (cbNoteOff != NULL) {
-                (*cbNoteOff)(*(pbuf + 1) & 0x0f, *(pbuf + 2) & 0x7f,
-                             *(pbuf + 3) & 0x7f);
+                cbNoteOff(midi.channel, midi.byte1, midi.byte2);
             }
-        } else if (kindmessage == 2) {
-            if (cbNoteOn != NULL) {
-                (*cbNoteOn)(*(pbuf + 1) & 0x0f, *(pbuf + 2) & 0x7f,
-                            *(pbuf + 3) & 0x7f);
+        break;
+        case MidiStatus::NoteOn:
+            if (midi.byte2 != 0) {
+                if (cbNoteOn != NULL) {
+                    cbNoteOn(midi.channel, midi.byte1, midi.byte2);
+                }
             }
-        } else if (kindmessage == 3) {
+            else {  // if note velocity == 0, turn off note
+                if (cbNoteOff != NULL) {
+                    cbNoteOff(midi.channel, midi.byte1, midi.byte2);
+                }
+            }
+        break;
+        case MidiStatus::PitchBend:
+            // TODO: implement
+        break;
+        case MidiStatus::CtrlChange:
             if (cbCtlChange != NULL) {
-                (*cbCtlChange)(*(pbuf + 1) & 0x0f, *(pbuf + 2) & 0x7f,
-                               *(pbuf + 3) & 0x7f);
+                cbCtlChange(midi.channel, midi.byte1, midi.byte2);
             }
-        }
+        break;
     }
-    // Tx
-    USBD_MIDI_SendPacket();
+}
+
+// expects a pointer to a 4 byte USB MIDI event message
+inline void parseMidiPacket(uint8_t *pkt) {
+    parseMidiPacket((usbMidiEvent_t *)pkt);
+}
+
+void midiSendNoteOn(uint8_t ch, uint8_t note, uint8_t vel) {
+    usbMidiEvent_t packet;
+    packet.codeIndexNumber = MidiCIN::NoteOn;
+    packet.midiMsg.status = MidiStatus::NoteOn;
+    packet.midiMsg.channel = ch;
+    packet.midiMsg.byte1 = note;
+    packet.midiMsg.byte2 = vel;
+    midiTx((uint8_t *)&packet, sizeof(usbMidiEvent_t));
+}
+
+void midiSendNoteOff(uint8_t ch, uint8_t note) {
+    usbMidiEvent_t packet;
+    packet.codeIndexNumber = MidiCIN::NoteOff;
+    packet.midiMsg.status = MidiStatus::NoteOff;
+    packet.midiMsg.channel = ch;
+    packet.midiMsg.byte1 = note;
+    packet.midiMsg.byte2 = 0;
+    midiTx((uint8_t *)&packet, sizeof(usbMidiEvent_t));
+}
+
+void midiSendCtrlChange(uint8_t ch, uint8_t num, uint8_t value) {
+    usbMidiEvent_t packet;
+    packet.codeIndexNumber = MidiCIN::ControlChange;
+    packet.midiMsg.status = MidiStatus::CtrlChange;
+    packet.midiMsg.channel = ch;
+    packet.midiMsg.byte1 = num;
+    packet.midiMsg.byte2 = value;
+    midiTx((uint8_t *)&packet, sizeof(usbMidiEvent_t));
+}
+
+void midiSetCbNoteOff(void (*cb)(uint8_t ch, uint8_t note, uint8_t vel)) {
+    cbNoteOff = cb;
+}
+void midiSetCbNoteOn(void (*cb)(uint8_t ch, uint8_t note, uint8_t vel)) {
+    cbNoteOn = cb;
+}
+void midiSetCbCtrlChange(void (*cb)(uint8_t ch, uint8_t num, uint8_t value)) {
+    cbCtlChange = cb;
 }

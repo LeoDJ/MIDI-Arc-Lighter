@@ -17,9 +17,10 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include  "usbd_ioreq.h"
+#include "usbd_composite.h"
 
-#define MIDI_IN_EP                                   0x81  /* EP1 for data IN */
-#define MIDI_OUT_EP                                  0x01  /* EP1 for data OUT */
+#define MIDI_IN_EP                                   COMP_EP_IDX_MIDI_IN  /* EP1 for data IN */
+#define MIDI_OUT_EP                                  COMP_EP_IDX_MIDI     /* EP1 for data OUT */
 // #define MIDI_DATA_HS_MAX_PACKET_SIZE                 512  /* Endpoint IN & OUT Packet size */
 #define MIDI_DATA_FS_MAX_PACKET_SIZE                 64  /* Endpoint IN & OUT Packet size */
 #define MIDI_CMD_PACKET_SIZE                         8  /* Control Endpoint Packet size */ 

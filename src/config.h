@@ -1,6 +1,6 @@
 #pragma once
 
-#define PWM_FREQ        18000   // Hz
+#define PWM_FREQ        22000   // Hz
 #define PWM_DUTY_CYCLE  66      // %, on-time of FETs
 #define NOTE_FREQ       1000000 // Hz, accuracy of note timers
 

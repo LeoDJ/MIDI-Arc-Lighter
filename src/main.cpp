@@ -14,6 +14,7 @@
 #include "config.h"
 #include "toneOutput.h"
 #include "tune.h"
+#include "midiHandler.h"
 
 
 extern "C" {
@@ -27,8 +28,10 @@ extern "C" {
             return -1;
         }
 
-        HAL_StatusTypeDef status = HAL_UART_Transmit(&PRINTF_UART, (uint8_t *)data, len, 1000);
-        return (status == HAL_OK ? len : 0);
+        // HAL_StatusTypeDef status = HAL_UART_Transmit(&PRINTF_UART, (uint8_t *)data, len, 1000);
+        // return (status == HAL_OK ? len : 0);
+        uint8_t status = CDC_Transmit_FS((uint8_t *)data, len);
+        return (status == USBD_OK ? len : 0);
     }
 }
 
@@ -48,7 +51,9 @@ int main(void) {
 
     printf("Hello World!\n");
 
-    // toneOutputInit();
+    toneOutputInit();
+    midiHandlerInit();
+
     // toneOutputWrite(0, 20);
     // toneOutputWrite(1, 20);
 
@@ -57,7 +62,7 @@ int main(void) {
         // toneOutputWrite(0, 440);
         HAL_Delay(200);
         HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-        CDC_Transmit_FS((uint8_t *)".", 2);
+        // CDC_Transmit_FS((uint8_t *)".", 2);
         // toneOutputWrite(0, 0);
         // HAL_Delay(100);
 

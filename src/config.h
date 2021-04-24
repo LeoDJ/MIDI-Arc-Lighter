@@ -7,6 +7,7 @@
 #define TONE_MODULATION_TIMER   htim1
 #define TONE_CH1_TIMER          htim14
 #define TONE_CH2_TIMER          htim15
+#define NUM_CHANNELS            2
 
 #define PRINTF_UART             huart1
 

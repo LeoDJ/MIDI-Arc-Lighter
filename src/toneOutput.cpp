@@ -2,8 +2,8 @@
 
 #include "tim.h"
 
-bool toggleCh1OnNextTimerUpdate = false;
-bool toggleCh2OnNextTimerUpdate = false;
+
+bool toggleChOnNextTimerUpdate[NUM_CHANNELS] = {0};
 
 // MIDI note frequencies multiplied by 5 for a bit more accuracy
 #define MIDI_FREQ_MULTIPLIER    5
@@ -48,15 +48,18 @@ void toneOutputWrite(uint8_t channel, uint16_t freq) {
 
     if (freq < 20 * MIDI_FREQ_MULTIPLIER) {   // disable tone output
         toneTimers[channel]->Instance->CR1 &= ~TIM_CR1_CEN;     // disable tone timer
+        toneTimers[channel]->Instance->DIER &= ~TIM_DIER_UIE;   // disable tone timer update interrupt
+        toggleChOnNextTimerUpdate[channel] = false;             // reset updateFlag just in case it's being set
         switch (channel) {                                      // disable PWM channel
             case 0: TONE_MODULATION_TIMER.Instance->CCR1 = 0; break;
             case 1: TONE_MODULATION_TIMER.Instance->CCR2 = PWM_PRESC; break;
         }
     }
     else {
-        toneTimers[channel]->Instance->CNT = 0;             // reset timer counter value
+        toneTimers[channel]->Instance->CNT = 0;                 // reset timer counter value
         toneTimers[channel]->Instance->ARR = NOTE_FREQ * MIDI_FREQ_MULTIPLIER / freq / 2;   // set compare to calculated frequency
-        toneTimers[channel]->Instance->CR1 |= TIM_CR1_CEN;  // enable timer
+        toneTimers[channel]->Instance->DIER |= TIM_DIER_UIE;    // enable tone timer update interrupt
+        toneTimers[channel]->Instance->CR1 |= TIM_CR1_CEN;      // enable timer
     }
 }
 
@@ -73,33 +76,35 @@ void toneOutputNote(uint8_t channel, uint8_t midiNote) {
     toneOutputWrite(channel, midiNoteFreq[midiNote]);
 }
 
-inline void toggleCh1() {
-    if (TONE_MODULATION_TIMER.Instance->CCR1 == 0) { // toggle PWM channel 1
-        TONE_MODULATION_TIMER.Instance->CCR1 = PWM_PRESC * PWM_DUTY_CYCLE / 100;
-    }
-    else {
-        TONE_MODULATION_TIMER.Instance->CCR1 = 0;
+inline void toggleCh(uint8_t channel) {
+    switch (channel) {
+        case 0:
+            if (TONE_MODULATION_TIMER.Instance->CCR1 == 0) { // toggle PWM channel 1
+                TONE_MODULATION_TIMER.Instance->CCR1 = PWM_PRESC * PWM_DUTY_CYCLE / 100;
+            }
+            else {
+                TONE_MODULATION_TIMER.Instance->CCR1 = 0;
+            }
+        break;
+        case 1:
+            if (TONE_MODULATION_TIMER.Instance->CCR2 == PWM_PRESC) { // toggle PWM channel 2 (inverted), off = max value
+                TONE_MODULATION_TIMER.Instance->CCR2 = PWM_PRESC * (100 - PWM_DUTY_CYCLE) / 100; // inverted
+            }
+            else {
+                TONE_MODULATION_TIMER.Instance->CCR2 = PWM_PRESC; // inverted channel, off = max value
+            }
+        break;
     }
 }
 
-inline void toggleCh2() {
-    if (TONE_MODULATION_TIMER.Instance->CCR2 == PWM_PRESC) { // toggle PWM channel 2 (inverted), off = max value
-        TONE_MODULATION_TIMER.Instance->CCR2 = PWM_PRESC * (100 - PWM_DUTY_CYCLE) / 100; // inverted
-    }
-    else {
-        TONE_MODULATION_TIMER.Instance->CCR2 = PWM_PRESC; // inverted channel, off = max value
-    }
-}
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     if (htim->Instance == TONE_MODULATION_TIMER.Instance) {
-        if (toggleCh1OnNextTimerUpdate) {
-            toggleCh1OnNextTimerUpdate = false;
-            toggleCh1();
-        }
-        else if (toggleCh2OnNextTimerUpdate) {
-            toggleCh2OnNextTimerUpdate = false;
-            toggleCh2();
+        for (int i = 0; i < NUM_CHANNELS; i++) {
+            if (toggleChOnNextTimerUpdate[i]) {
+                toggleChOnNextTimerUpdate[i] = false;
+                toggleCh(i);
+            }
         }
         return;
     }
@@ -115,18 +120,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
              * This leads to glitched PWM pulses with only half the supposed length.
              * The workaround is to wait for the next TIM1 update event and toggle the PWM channel then.
              */
-            toggleCh1OnNextTimerUpdate = true;
+            toggleChOnNextTimerUpdate[0] = true;
         }
         else {
-            toggleCh1();
+            toggleCh(0);
         }
     }
     else if (htim->Instance == TONE_CH2_TIMER.Instance) {
         if (!downcounting) {
-            toggleCh2OnNextTimerUpdate = true;
+            toggleChOnNextTimerUpdate[1] = true;
         }
         else {
-            toggleCh2();
+            toggleCh(1);
         }
     }
 }

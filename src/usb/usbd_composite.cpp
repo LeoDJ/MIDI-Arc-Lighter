@@ -50,11 +50,11 @@ static uint8_t USBD_Composite_CfgDesc[USB_Composite_CONFIG_DESC_SIZ] = {
     USB_DESC_TYPE_CONFIGURATION,    /* bDescriptorType: Configuration */
     USB_Composite_CONFIG_DESC_SIZ,  /* wTotalLength: Bytes returned */
     0x00,
-    0x04,               	        /*bNumInterfaces: 4 interfaces (CDC + MIDI) */
-    0x01,               	        /*bConfigurationValue: Configuration value*/
-    0x02,               	        /*iConfiguration: Index of string descriptor describing the configuration*/
-    0xC0,               	        /*bmAttributes: bus powered and Supports Remote Wakeup */
-    0x32,               	        /*MaxPower 100 mA: this current is used for detecting Vbus*/
+    0x04,                           /*bNumInterfaces: 4 interfaces (CDC + MIDI) */
+    0x01,                           /*bConfigurationValue: Configuration value*/
+    0x02,                           /*iConfiguration: Index of string descriptor describing the configuration*/
+    0xC0,                           /*bmAttributes: bus powered and Supports Remote Wakeup */
+    0x32,                           /*MaxPower 100 mA: this current is used for detecting Vbus*/
 
 
 
@@ -63,13 +63,13 @@ static uint8_t USBD_Composite_CfgDesc[USB_Composite_CONFIG_DESC_SIZ] = {
     // IAD descriptor for CDC interfaces
 
     0x08,                   /* bLength */
-	0x0B,                   /* bDescriptorType: IAD */
-	COMP_INTERFACE_IDX_CDC, /* bFirstInterface */
-	0x02,                   /* bInterfaceCount: 2 for CDC */
-	0x02,                   /* bFunctionClass: Communication Interface Class */
-	0x02,                   /* bFunctionSubClass: Abstract Control Model */
-	0x01,                   /* bFunctionProtocol: Common AT commands */
-	0x00,                   /* iFunction (Index of string descriptor describing this function) */
+    0x0B,                   /* bDescriptorType: IAD */
+    COMP_INTERFACE_IDX_CDC, /* bFirstInterface */
+    0x02,                   /* bInterfaceCount: 2 for CDC */
+    0x02,                   /* bFunctionClass: Communication Interface Class */
+    0x02,                   /* bFunctionSubClass: Abstract Control Model */
+    0x01,                   /* bFunctionProtocol: Common AT commands */
+    0x00,                   /* iFunction (Index of string descriptor describing this function) */
 
     /*---------------------------------------------------------------------------*/
     // CDC Descriptor
@@ -160,13 +160,13 @@ static uint8_t USBD_Composite_CfgDesc[USB_Composite_CONFIG_DESC_SIZ] = {
     // IAD descriptor for MIDI interfaces
 
     0x08,                   /* bLength */
-	0x0B,                   /* bDescriptorType: IAD */
-	COMP_INTERFACE_IDX_MIDI,/* bFirstInterface */
-	0x02,                   /* bInterfaceCount: 2 for MIDI */
-	0x01,                   /* bFunctionClass: Audio */
-	0x00,                   /* bFunctionSubClass: Undefined */
-	0x00,                   /* bFunctionProtocol: Undefined */
-	0x00,                   /* iFunction (Index of string descriptor describing this function) */
+    0x0B,                   /* bDescriptorType: IAD */
+    COMP_INTERFACE_IDX_MIDI,/* bFirstInterface */
+    0x02,                   /* bInterfaceCount: 2 for MIDI */
+    0x01,                   /* bFunctionClass: Audio */
+    0x00,                   /* bFunctionSubClass: Undefined */
+    0x00,                   /* bFunctionProtocol: Undefined */
+    0x00,                   /* iFunction (Index of string descriptor describing this function) */
 
     /*---------------------------------------------------------------------------*/
     // MIDI Descriptor

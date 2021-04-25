@@ -28,8 +28,8 @@ uint16_t timings[NUM_NOTES] =   {104, 104, 104, 104, 104, 104, 104, 104, 104, 10
 
 void playTune() {
     for (int i = 0; i < NUM_NOTES; i++) {
-        toneOutputFreq(0, ch1Notes[i]);
-        toneOutputFreq(1, ch2Notes[i]);
+        toneOutputWrite(0, ch1Notes[i]);
+        toneOutputWrite(1, ch2Notes[i]);
         HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
         HAL_Delay(timings[i]);
     }

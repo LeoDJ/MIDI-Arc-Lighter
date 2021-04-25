@@ -5,21 +5,6 @@
 
 bool toggleChOnNextTimerUpdate[NUM_CHANNELS] = {0};
 
-// MIDI note frequencies multiplied by 5 for a bit more accuracy
-const uint16_t midiNoteFreq[] = {
-    41,    43,    46,    49,    52,    55,    58,    61,    65,    69,    73,
-    77,    82,    87,    92,    97,    103,   109,   116,   122,   130,   138,
-    146,   154,   164,   173,   184,   194,   206,   218,   231,   245,   260,
-    275,   291,   309,   327,   346,   367,   389,   412,   437,   462,   490,
-    519,   550,   583,   617,   654,   693,   734,   778,   824,   873,   925,
-    980,   1038,  1100,  1165,  1235,  1308,  1386,  1468,  1556,  1648,  1746,
-    1850,  1960,  2076,  2200,  2331,  2469,  2616,  2772,  2937,  3111,  3296,
-    3492,  3700,  3920,  4153,  4400,  4662,  4939,  5232,  5544,  5873,  6223,
-    6593,  6985,  7400,  7840,  8306,  8800,  9323,  9878,  10465, 11087, 11747,
-    12445, 13185, 13969, 14800, 15680, 16612, 17600, 18647, 19755, 20930, 22175,
-    23493, 24890, 26370, 27938, 29600, 31360, 33224, 35200, 37293, 39511, 41860,
-    44349, 46986, 49780, 52740, 55876, 59199, 62719};
-
 
 void toneOutputInit() {
     // need to initialize the tone timers first, so they don't trigger an interrupt and switch on the arc on init
@@ -37,15 +22,14 @@ void toneOutputInit() {
 
 const TIM_HandleTypeDef *toneTimers[] = {&TONE_CH1_TIMER, &TONE_CH2_TIMER};
 
-// freq = multiplied frequency
-void toneOutputWrite(uint8_t channel, uint16_t freq, bool newNote) {
+void toneOutputWrite(uint8_t channel, float freq, bool newNote) {
     if (channel >= 2) {
         return;
     }
 
     // printf("tone %d %d\n", channel, freq);
 
-    if (freq < 20 * MIDI_FREQ_MULTIPLIER) {   // disable tone output
+    if (freq < 20) {   // disable tone output
         toneTimers[channel]->Instance->CR1 &= ~TIM_CR1_CEN;     // disable tone timer
         toneTimers[channel]->Instance->DIER &= ~TIM_DIER_UIE;   // disable tone timer update interrupt
         toggleChOnNextTimerUpdate[channel] = false;             // reset updateFlag just in case it's being set
@@ -55,7 +39,7 @@ void toneOutputWrite(uint8_t channel, uint16_t freq, bool newNote) {
         }
     }
     else {
-        toneTimers[channel]->Instance->ARR = NOTE_FREQ * MIDI_FREQ_MULTIPLIER / freq / 2;   // set compare to calculated frequency
+        toneTimers[channel]->Instance->ARR = NOTE_FREQ / freq / 2;  // set compare to calculated frequency
         if (newNote) {
             // toneTimers[channel]->Instance->EGR |= TIM_EGR_UG;       // generate update event to load new ARR value from preload register
             toneTimers[channel]->Instance->CNT = 0;                 // reset timer counter value
@@ -64,19 +48,6 @@ void toneOutputWrite(uint8_t channel, uint16_t freq, bool newNote) {
             
         }
     }
-}
-
-void toneOutputFreq(uint8_t channel, uint16_t frequency, bool newNote) {
-    toneOutputWrite(channel, frequency * MIDI_FREQ_MULTIPLIER, newNote);
-}
-
-void toneOutputNote(uint8_t channel, uint8_t midiNote) {
-    if (midiNote > 127) {
-        toneOutputWrite(channel, 0, true); // turn off note for invalid note
-        return;
-    }
-
-    toneOutputWrite(channel, midiNoteFreq[midiNote], true);
 }
 
 inline void toggleCh(uint8_t channel) {

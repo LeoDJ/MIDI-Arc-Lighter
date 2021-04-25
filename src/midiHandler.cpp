@@ -41,7 +41,7 @@ void midiHandlerNoteOn(uint8_t ch, uint8_t note, uint8_t vel) {
     if (toneCh != -1) {
         curNotePlaying[toneCh] = note;
         // toneOutputNote(toneCh, note);
-        toneOutputFreq(toneCh, calculateFrequency(note));
+        toneOutputWrite(toneCh, calculateFrequency(note));
     }
     else {
         printf(" XXX");
@@ -54,7 +54,7 @@ void midiHandlerNoteOff(uint8_t ch, uint8_t note, uint8_t vel) {
     int toneCh = getChannelByNote(note);
     if (toneCh != -1) {
         curNotePlaying[toneCh] = -1;
-        toneOutputFreq(toneCh, 0);
+        toneOutputWrite(toneCh, 0);
     }
 }
 
@@ -66,10 +66,7 @@ void midiHandlerPitchBend(uint8_t ch, uint16_t bendVal) {
     for (int i = 0; i < NUM_CHANNELS; i++) {
         int8_t note = curNotePlaying[i];
         if (note != -1) {
-            float freq = calculateFrequency(note);
-            int freq_int = freq;
-            // printf("freq: %d\n", freq_int);
-            toneOutputFreq(i, freq, false);
+            toneOutputWrite(i, calculateFrequency(note), false);
         }
     }
 }
@@ -86,7 +83,7 @@ void midiHandlerCtrlChange(uint8_t ch, uint8_t num, uint8_t value) {
                 // turn off all channels
                 for (int i = 0; i < NUM_CHANNELS; i++) {
                     curNotePlaying[i] = -1;
-                    toneOutputFreq(i, 0);
+                    toneOutputWrite(i, 0);
                 }
             break;
         }

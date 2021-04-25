@@ -3,7 +3,7 @@
 #include "usbd_midi.h"
 #include "usbd_desc.h"
 
-#define MIDI_RINGBUF_SIZE   128
+#define MIDI_RINGBUF_SIZE   256
 
 extern USBD_MIDI_ItfTypeDef USBD_MIDI_Interface_fops_FS;
 

@@ -6,7 +6,6 @@
 bool toggleChOnNextTimerUpdate[NUM_CHANNELS] = {0};
 
 // MIDI note frequencies multiplied by 5 for a bit more accuracy
-#define MIDI_FREQ_MULTIPLIER    5
 const uint16_t midiNoteFreq[] = {
     41,    43,    46,    49,    52,    55,    58,    61,    65,    69,    73,
     77,    82,    87,    92,    97,    103,   109,   116,   122,   130,   138,
@@ -38,8 +37,8 @@ void toneOutputInit() {
 
 const TIM_HandleTypeDef *toneTimers[] = {&TONE_CH1_TIMER, &TONE_CH2_TIMER};
 
-// multiplied frequency
-void toneOutputWrite(uint8_t channel, uint16_t freq) {
+// freq = multiplied frequency
+void toneOutputWrite(uint8_t channel, uint16_t freq, bool newNote) {
     if (channel >= 2) {
         return;
     }
@@ -56,24 +55,28 @@ void toneOutputWrite(uint8_t channel, uint16_t freq) {
         }
     }
     else {
-        toneTimers[channel]->Instance->CNT = 0;                 // reset timer counter value
         toneTimers[channel]->Instance->ARR = NOTE_FREQ * MIDI_FREQ_MULTIPLIER / freq / 2;   // set compare to calculated frequency
-        toneTimers[channel]->Instance->DIER |= TIM_DIER_UIE;    // enable tone timer update interrupt
-        toneTimers[channel]->Instance->CR1 |= TIM_CR1_CEN;      // enable timer
+        if (newNote) {
+            // toneTimers[channel]->Instance->EGR |= TIM_EGR_UG;       // generate update event to load new ARR value from preload register
+            toneTimers[channel]->Instance->CNT = 0;                 // reset timer counter value
+            toneTimers[channel]->Instance->DIER |= TIM_DIER_UIE;    // enable tone timer update interrupt
+            toneTimers[channel]->Instance->CR1 |= TIM_CR1_CEN;      // enable timer
+            
+        }
     }
 }
 
-void toneOutputFreq(uint8_t channel, uint16_t frequency) {
-    toneOutputWrite(channel, frequency * MIDI_FREQ_MULTIPLIER);
+void toneOutputFreq(uint8_t channel, uint16_t frequency, bool newNote) {
+    toneOutputWrite(channel, frequency * MIDI_FREQ_MULTIPLIER, newNote);
 }
 
 void toneOutputNote(uint8_t channel, uint8_t midiNote) {
     if (midiNote > 127) {
-        toneOutputWrite(channel, 0); // turn off note for invalid note
+        toneOutputWrite(channel, 0, true); // turn off note for invalid note
         return;
     }
 
-    toneOutputWrite(channel, midiNoteFreq[midiNote]);
+    toneOutputWrite(channel, midiNoteFreq[midiNote], true);
 }
 
 inline void toggleCh(uint8_t channel) {

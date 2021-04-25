@@ -11,6 +11,7 @@ inline void parseMidiPacket(uint8_t *pkt);
 void (*cbNoteOff)(uint8_t ch, uint8_t note, uint8_t vel);
 void (*cbNoteOn)(uint8_t ch, uint8_t note, uint8_t vel);
 void (*cbCtlChange)(uint8_t ch, uint8_t num, uint8_t value);
+void (*cbPitchBend)(uint8_t ch, uint16_t value);
 
 USBD_MIDI_ItfTypeDef USBD_MIDI_Interface_fops_FS = {
     midiRx, 
@@ -49,6 +50,7 @@ static uint16_t midiTx(uint8_t *msg, uint16_t length) {
 }
 
 void parseMidiPacket(usbMidiEvent_t *pkt) {
+    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
     midiMessage_t midi = pkt->midiMsg;
     // printf("Parse MIDI packet: %02X %02X %02X %02X, status: %02X\n", pkt->raw8[0], pkt->raw8[1], pkt->raw8[2], pkt->raw8[3], midi.status);
     switch (midi.status) {
@@ -70,7 +72,10 @@ void parseMidiPacket(usbMidiEvent_t *pkt) {
             }
         break;
         case MidiStatus::PitchBend:
-            // TODO: implement
+            if (cbPitchBend != NULL) {
+                uint16_t bendVal = midi.byte2 << 7 | midi.byte1;
+                cbPitchBend(midi.channel, bendVal);
+            }
         break;
         case MidiStatus::CtrlChange:
             if (cbCtlChange != NULL) {
@@ -78,6 +83,7 @@ void parseMidiPacket(usbMidiEvent_t *pkt) {
             }
         break;
     }
+    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 }
 
 // expects a pointer to a 4 byte USB MIDI event message
@@ -123,4 +129,8 @@ void midiSetCbNoteOn(void (*cb)(uint8_t ch, uint8_t note, uint8_t vel)) {
 }
 void midiSetCbCtrlChange(void (*cb)(uint8_t ch, uint8_t num, uint8_t value)) {
     cbCtlChange = cb;
+}
+
+void midiSetCbPitchBend(void (*cb)(uint8_t ch, uint16_t value)) {
+    cbPitchBend = cb;
 }

@@ -14,6 +14,7 @@ void midiSendCtrlChange(uint8_t ch, uint8_t num, uint8_t value);
 void midiSetCbNoteOff(void (*cb)(uint8_t ch, uint8_t note, uint8_t vel));
 void midiSetCbNoteOn(void (*cb)(uint8_t ch, uint8_t note, uint8_t vel));
 void midiSetCbCtrlChange(void (*cb)(uint8_t ch, uint8_t num, uint8_t value));
+void midiSetCbPitchBend(void (*cb)(uint8_t ch, uint16_t value));
 
 
 // see midi10.pdf, chapter 4
@@ -62,12 +63,12 @@ struct MidiController {
 
 typedef union {
     struct {
-        uint8_t channel : 4;    // byte 0, low nibble
-        uint8_t status : 4;     // byte 0, high nibble
-        uint8_t byte1 : 7;
-        uint8_t : 1;            // padding
-        uint8_t byte2 : 7;
-        uint8_t : 1;            // padding
+        uint8_t channel : 4;    // byte 0 - low nibble
+        uint8_t status : 4;     // byte 0 - high nibble, highest bit always 1
+        uint8_t byte1 : 7;      // byte 1 - 7 usable bits
+        uint8_t : 1;            // padding, should be 0 for data byte
+        uint8_t byte2 : 7;      // byte 2 - 7 usable bits
+        uint8_t : 1;            // padding, should be 0 for data byte
     };
     uint8_t raw8[3];
 } midiMessage_t;

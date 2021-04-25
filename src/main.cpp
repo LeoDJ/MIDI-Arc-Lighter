@@ -14,6 +14,7 @@
 #include "config.h"
 #include "toneOutput.h"
 #include "tune.h"
+#include "usbd_midi_if.h"
 #include "midiHandler.h"
 
 
@@ -52,21 +53,26 @@ int main(void) {
     printf("Hello World!\n");
 
     toneOutputInit();
-    midiHandlerInit();
+    midiInit();         // initialize midi buffers
+    midiHandlerInit();  // register midi handler callbacks
 
     // toneOutputWrite(0, 20);
     // toneOutputWrite(1, 20);
 
     while (1) {
+        midiLoop();     // parse midi messages and call handler callbacks
+
+
         // HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
         // toneOutputWrite(0, 440);
-        HAL_Delay(200);
-        HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+        // HAL_Delay(200);
+        // HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
         // CDC_Transmit_FS((uint8_t *)".", 2);
         // toneOutputWrite(0, 0);
         // HAL_Delay(100);
 
         // playTune();
+
     }
 }
 

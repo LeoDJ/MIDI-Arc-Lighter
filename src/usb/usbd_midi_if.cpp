@@ -1,11 +1,13 @@
 #include "usbd_midi_if.h"
 #include "stm32f0xx_hal.h"
+#include "ringbuf.h"
 
 // Baisc MIDI RX/TX functions
 static uint16_t midiRx(uint8_t *msg, uint16_t length);
 static uint16_t midiTx(uint8_t *msg, uint16_t length);
 
 inline void parseMidiPacket(uint8_t *pkt);
+void parseMidiPacket(usbMidiEvent_t *pkt);
 
 // callback variables
 void (*cbNoteOff)(uint8_t ch, uint8_t note, uint8_t vel);
@@ -18,6 +20,12 @@ USBD_MIDI_ItfTypeDef USBD_MIDI_Interface_fops_FS = {
     midiTx
 };
 
+static ringbuf_t ringBuf;
+
+void midiInit() {
+    ringBuf = ringbuf_new(MIDI_RINGBUF_SIZE);
+}
+
 static uint16_t midiRx(uint8_t *msg, uint16_t length) {
     // printf("[MIDI RX] ");
     // for (int i = 0; i < length; i++) {
@@ -28,9 +36,7 @@ static uint16_t midiRx(uint8_t *msg, uint16_t length) {
     // only handle 4 byte long usb midi packets
     if (length % 4 == 0) {
         for (uint16_t i = 0; i < length / 4; i++) {
-            // directly parse midi message and call respective callbacks
-            // hopefully this doesn't stall the USB interrupt too long
-            parseMidiPacket(msg + i * 4);
+            ringbuf_memcpy_into(ringBuf, msg + i * 4, 4);
         }
     }
     return 0;
@@ -49,8 +55,15 @@ static uint16_t midiTx(uint8_t *msg, uint16_t length) {
     return USBD_OK;
 }
 
+void midiLoop() {
+    while (ringbuf_bytes_used(ringBuf) >= 4) {
+        usbMidiEvent_t event;
+        ringbuf_memcpy_from(&event, ringBuf, 4);
+        parseMidiPacket(&event);
+    }
+}
+
 void parseMidiPacket(usbMidiEvent_t *pkt) {
-    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
     midiMessage_t midi = pkt->midiMsg;
     // printf("Parse MIDI packet: %02X %02X %02X %02X, status: %02X\n", pkt->raw8[0], pkt->raw8[1], pkt->raw8[2], pkt->raw8[3], midi.status);
     switch (midi.status) {
@@ -83,7 +96,6 @@ void parseMidiPacket(usbMidiEvent_t *pkt) {
             }
         break;
     }
-    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 }
 
 // expects a pointer to a 4 byte USB MIDI event message

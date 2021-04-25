@@ -1,6 +1,10 @@
 #ifndef INCLUDED_RINGBUF_H
 #define INCLUDED_RINGBUF_H
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 /*
  * ringbuf.h - C ring buffer (FIFO) interface.
  *
@@ -29,7 +33,15 @@
 #include <stddef.h>
 #include <sys/types.h>
 
-typedef struct ringbuf_t *ringbuf_t;
+
+struct ringbuf_s
+{
+    uint8_t *buf;
+    uint8_t *head, *tail;
+    size_t size;
+};
+
+typedef struct ringbuf_s *ringbuf_t;
 
 /*
  * Create a new ring buffer with the given capacity (usable
@@ -51,7 +63,7 @@ ringbuf_new(size_t capacity);
  * ringbuf_capacity function.
  */
 size_t
-ringbuf_buffer_size(const struct ringbuf_t *rb);
+ringbuf_buffer_size(const struct ringbuf_s *rb);
 
 /*
  * Deallocate a ring buffer, and, as a side effect, set the pointer to
@@ -72,36 +84,36 @@ ringbuf_reset(ringbuf_t rb);
  * returned by ringbuf_buffer_size.
  */
 size_t
-ringbuf_capacity(const struct ringbuf_t *rb);
+ringbuf_capacity(const struct ringbuf_s *rb);
 
 /*
  * The number of free/available bytes in the ring buffer. This value
  * is never larger than the ring buffer's usable capacity.
  */
 size_t
-ringbuf_bytes_free(const struct ringbuf_t *rb);
+ringbuf_bytes_free(const struct ringbuf_s *rb);
 
 /*
  * The number of bytes currently being used in the ring buffer. This
  * value is never larger than the ring buffer's usable capacity.
  */
 size_t
-ringbuf_bytes_used(const struct ringbuf_t *rb);
+ringbuf_bytes_used(const struct ringbuf_s *rb);
 
 int
-ringbuf_is_full(const struct ringbuf_t *rb);
+ringbuf_is_full(const struct ringbuf_s *rb);
 
 int
-ringbuf_is_empty(const struct ringbuf_t *rb);
+ringbuf_is_empty(const struct ringbuf_s *rb);
 
 /*
  * Const access to the head and tail pointers of the ring buffer.
  */
 const void *
-ringbuf_tail(const struct ringbuf_t *rb);
+ringbuf_tail(const struct ringbuf_s *rb);
 
 const void *
-ringbuf_head(const struct ringbuf_t *rb);
+ringbuf_head(const struct ringbuf_s *rb);
 
 /*
  * Locate the first occurrence of character c (converted to an
@@ -115,7 +127,7 @@ ringbuf_head(const struct ringbuf_t *rb);
  * offsets from the tail pointer, not necessarily linear offsets.
  */
 size_t
-ringbuf_findchr(const struct ringbuf_t *rb, int c, size_t offset);
+ringbuf_findchr(const struct ringbuf_s *rb, int c, size_t offset);
 
 /*
  * Beginning at ring buffer dst's head pointer, fill the ring buffer
@@ -239,5 +251,9 @@ ringbuf_write(int fd, ringbuf_t rb, size_t count);
  */
 void *
 ringbuf_copy(ringbuf_t dst, ringbuf_t src, size_t count);
+
+#ifdef __cplusplus
+ }
+#endif
 
 #endif /* INCLUDED_RINGBUF_H */

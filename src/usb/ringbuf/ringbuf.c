@@ -31,17 +31,10 @@
  * intended.
  */
 
-struct ringbuf_t
-{
-    uint8_t *buf;
-    uint8_t *head, *tail;
-    size_t size;
-};
-
 ringbuf_t
 ringbuf_new(size_t capacity)
 {
-    ringbuf_t rb = malloc(sizeof(struct ringbuf_t));
+    ringbuf_t rb = malloc(sizeof(struct ringbuf_s));
     if (rb) {
 
         /* One byte is used for detecting the full condition. */
@@ -58,7 +51,7 @@ ringbuf_new(size_t capacity)
 }
 
 size_t
-ringbuf_buffer_size(const struct ringbuf_t *rb)
+ringbuf_buffer_size(const struct ringbuf_s *rb)
 {
     return rb->size;
 }
@@ -79,7 +72,7 @@ ringbuf_free(ringbuf_t *rb)
 }
 
 size_t
-ringbuf_capacity(const struct ringbuf_t *rb)
+ringbuf_capacity(const struct ringbuf_s *rb)
 {
     return ringbuf_buffer_size(rb) - 1;
 }
@@ -90,13 +83,13 @@ ringbuf_capacity(const struct ringbuf_t *rb)
  * unless you're writing a new ringbuf_* function.
  */
 static const uint8_t *
-ringbuf_end(const struct ringbuf_t *rb)
+ringbuf_end(const struct ringbuf_s *rb)
 {
     return rb->buf + ringbuf_buffer_size(rb);
 }
 
 size_t
-ringbuf_bytes_free(const struct ringbuf_t *rb)
+ringbuf_bytes_free(const struct ringbuf_s *rb)
 {
     if (rb->head >= rb->tail)
         return ringbuf_capacity(rb) - (rb->head - rb->tail);
@@ -105,31 +98,31 @@ ringbuf_bytes_free(const struct ringbuf_t *rb)
 }
 
 size_t
-ringbuf_bytes_used(const struct ringbuf_t *rb)
+ringbuf_bytes_used(const struct ringbuf_s *rb)
 {
     return ringbuf_capacity(rb) - ringbuf_bytes_free(rb);
 }
 
 int
-ringbuf_is_full(const struct ringbuf_t *rb)
+ringbuf_is_full(const struct ringbuf_s *rb)
 {
     return ringbuf_bytes_free(rb) == 0;
 }
 
 int
-ringbuf_is_empty(const struct ringbuf_t *rb)
+ringbuf_is_empty(const struct ringbuf_s *rb)
 {
     return ringbuf_bytes_free(rb) == ringbuf_capacity(rb);
 }
 
 const void *
-ringbuf_tail(const struct ringbuf_t *rb)
+ringbuf_tail(const struct ringbuf_s *rb)
 {
     return rb->tail;
 }
 
 const void *
-ringbuf_head(const struct ringbuf_t *rb)
+ringbuf_head(const struct ringbuf_s *rb)
 {
     return rb->head;
 }
@@ -152,7 +145,7 @@ ringbuf_nextp(ringbuf_t rb, const uint8_t *p)
 }
 
 size_t
-ringbuf_findchr(const struct ringbuf_t *rb, int c, size_t offset)
+ringbuf_findchr(const struct ringbuf_s *rb, int c, size_t offset)
 {
     const uint8_t *bufend = ringbuf_end(rb);
     size_t bytes_used = ringbuf_bytes_used(rb);

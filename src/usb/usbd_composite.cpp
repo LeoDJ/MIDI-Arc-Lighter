@@ -184,15 +184,15 @@ static uint8_t USBD_Composite_CfgDesc[USB_Composite_CONFIG_DESC_SIZ] = {
     0x00,                       // iInterface: Index of string descriptor
 
     // Class-specific AC Interface Descriptor (midi10.pdf, B.3.2)
-    0x09,   // bLength
-    0x24,   // bDescriptorType: CS_INTERFACE
-    0x01,   // bDescriptorSubtype: Header
-    0x00,   // bcdADC: Revision of class spec: 1.0
-    0x01,   
-    0x09,   // wTotalLength
-    0x00,   
-    0x01,   // bInCollection: Number of streaming interfaces: 1
-    0x01,   // baInterfaceNr(1): AudioStreaming interface 1 belongs tothis AudioControl interface
+    0x09,                               // bLength
+    0x24,                               // bDescriptorType: CS_INTERFACE
+    0x01,                               // bDescriptorSubtype: Header
+    0x00,                               // bcdADC: Revision of class spec: 1.0
+    0x01,                               
+    0x09,                               // wTotalLength
+    0x00,                               
+    0x01,                               // bInCollection: Number of streaming interfaces: 1
+    COMP_INTERFACE_IDX_MIDI_STREAM,     // baInterfaceNr(1): AudioStreaming interface 1 belongs tothis AudioControl interface
 
     // MIDIStreaming Interface Descriptors (midi10.pdf, B.4.1)
     0x09,                           // bLength

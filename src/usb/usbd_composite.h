@@ -11,14 +11,14 @@ extern "C" {
 
 #define IN_EP_DIR   0x80 // Direction bit
 
-#define COMP_INTERFACE_IDX_MIDI         0x00
-#define COMP_INTERFACE_IDX_MIDI_STREAM  0x01
-#define COMP_INTERFACE_IDX_CDC          0x02
-#define COMP_INTERFACE_IDX_CDC_DATA     0x03
+#define COMP_INTERFACE_IDX_CDC          0x00
+#define COMP_INTERFACE_IDX_CDC_DATA     0x01
+#define COMP_INTERFACE_IDX_MIDI         0x02
+#define COMP_INTERFACE_IDX_MIDI_STREAM  0x03
 
-#define COMP_EP_IDX_MIDI            0x01
 #define COMP_EP_IDX_CDC             0x02
 #define COMP_EP_IDX_CDC_CMD         0x03
+#define COMP_EP_IDX_MIDI            0x01    // don't know why, but can't use 3 for MIDI EP ??
 
 #define COMP_EP_IDX_CDC_IN          (COMP_EP_IDX_CDC | IN_EP_DIR)
 #define COMP_EP_IDX_CDC_CMD_IN      (COMP_EP_IDX_CDC_CMD | IN_EP_DIR)

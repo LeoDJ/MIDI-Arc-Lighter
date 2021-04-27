@@ -147,6 +147,14 @@ USBD_CDC_ItfTypeDef USBD_Interface_fops_FS =
   CDC_Receive_FS
 };
 
+USBD_CDC_LineCodingTypeDef linecoding = {
+  .bitrate = 115200,
+  .format = 0x00,     // stop bits: 1
+  .paritytype = 0x00, // parity: none
+  .datatype = 0x08    // bits: 8
+};
+
+
 /* Private functions ---------------------------------------------------------*/
 /**
   * @brief  Initializes the CDC media low layer over the FS USB IP
@@ -223,11 +231,17 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   /* 6      | bDataBits  |   1   | Number Data bits (5, 6, 7, 8 or 16).          */
   /*******************************************************************************/
     case CDC_SET_LINE_CODING:
-
+      linecoding.bitrate = *((uint32_t *)pbuf); // parse first 4 bytes as uint32
+      linecoding.format = pbuf[4];
+      linecoding.paritytype = pbuf[5];
+      linecoding.datatype = pbuf[6];
     break;
 
     case CDC_GET_LINE_CODING:
-
+      memcpy(pbuf, &linecoding, 4); // probably not compiler portable, but works on my toolchain
+      pbuf[4] = linecoding.format;
+      pbuf[5] = linecoding.paritytype;
+      pbuf[5] = linecoding.datatype;
     break;
 
     case CDC_SET_CONTROL_LINE_STATE:

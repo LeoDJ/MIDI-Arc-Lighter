@@ -4,3 +4,4 @@
 #include "main.h"
 
 void midiHandlerInit();
+void midiHandlerArpLoop();

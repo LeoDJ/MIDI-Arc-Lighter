@@ -29,10 +29,10 @@ extern "C" {
             return -1;
         }
 
-        // HAL_StatusTypeDef status = HAL_UART_Transmit(&PRINTF_UART, (uint8_t *)data, len, 1000);
-        // return (status == HAL_OK ? len : 0);
-        uint8_t status = CDC_Transmit_FS((uint8_t *)data, len);
-        return (status == USBD_OK ? len : 0);
+        HAL_StatusTypeDef status = HAL_UART_Transmit(&PRINTF_UART, (uint8_t *)data, len, 1000);
+        return (status == HAL_OK ? len : 0);
+        // uint8_t status = CDC_Transmit_FS((uint8_t *)data, len);
+        // return (status == USBD_OK ? len : 0);
     }
 }
 
@@ -63,6 +63,7 @@ int main(void) {
 
     while (1) {
         midiLoop();     // parse midi messages and call handler callbacks
+        midiHandlerArpLoop();
 
 
         // HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);

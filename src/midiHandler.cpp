@@ -3,30 +3,35 @@
 #include "usbd_midi_if.h"
 #include "toneOutput.h"
 
-// -1 for no note playing
-static int8_t curNotePlaying[NUM_CHANNELS];
+typedef struct {
+    int8_t note;    // MIDI note number, -1 for no note
+    int8_t channel; // MIDI channel, currently not used
+    float freq;     // calculated frequency, buffered for arpeggio
+} curNote_t;
+
+static curNote_t curNotePlaying[NUM_CONCURRENT_NOTES];
 
 uint16_t pitchBend = 8192;
 
-static int getChannelByNote(uint8_t note) {
-    for (int i = 0; i < NUM_CHANNELS; i++) {
-        if (curNotePlaying[i] == note) {
+static int getCurNoteIdx(uint8_t note) {
+    for (int i = 0; i < NUM_CONCURRENT_NOTES; i++) {
+        if (curNotePlaying[i].note == note) {
             return i;
         }
     }
     return -1;
 }
 
-static int getFreeChannelSlot() {
-    for (int i = 0; i < NUM_CHANNELS; i++) {
-        if (curNotePlaying[i] == -1) {
+static int getFreeCurNoteIdx() {
+    for (int i = 0; i < NUM_CONCURRENT_NOTES; i++) {
+        if (curNotePlaying[i].note == -1) {
             return i;
         }
     }
     return -1;
 }
 
-// float implementation is uses ~14kB Flash. TODO: optimize?
+// float implementation is uses ~14kB Flash, powf is 7.5k of that. TODO: optimize?
 static float calculateFrequency(uint8_t noteNum) {
     // formula from https://dsp.stackexchange.com/a/1650/57059
     // HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
@@ -36,12 +41,15 @@ static float calculateFrequency(uint8_t noteNum) {
 }
 
 void midiHandlerNoteOn(uint8_t ch, uint8_t note, uint8_t vel) {
-    printf("(%8ld) [MIDI] On:  %3d", HAL_GetTick(), note);
-    int toneCh = getFreeChannelSlot();
-    if (toneCh != -1) {
-        curNotePlaying[toneCh] = note;
-        // toneOutputNote(toneCh, note);
-        toneOutputWrite(toneCh, calculateFrequency(note));
+    int idx = getFreeCurNoteIdx();
+    printf("(%8ld) [MIDI] On:  %3d, Slot: %d", HAL_GetTick(), note, idx);
+    if (idx != -1) {
+        curNotePlaying[idx].note = note;
+        curNotePlaying[idx].channel = ch; // currently unused
+        curNotePlaying[idx].freq = calculateFrequency(note);
+
+        // trigger note update
+        toneOutputWrite(idx, curNotePlaying[idx].freq);
     }
     else {
         printf(" XXX");
@@ -51,10 +59,11 @@ void midiHandlerNoteOn(uint8_t ch, uint8_t note, uint8_t vel) {
 
 void midiHandlerNoteOff(uint8_t ch, uint8_t note, uint8_t vel) {
     printf("(%8ld) [MIDI] Off: %3d\n", HAL_GetTick(), note);
-    int toneCh = getChannelByNote(note);
-    if (toneCh != -1) {
-        curNotePlaying[toneCh] = -1;
-        toneOutputWrite(toneCh, 0);
+    int idx = getCurNoteIdx(note);
+    if (idx != -1) {
+        curNotePlaying[idx].note = -1;
+        // Trigger note update
+        toneOutputWrite(idx, 0);
     }
 }
 
@@ -62,11 +71,12 @@ void midiHandlerPitchBend(uint8_t ch, uint16_t bendVal) {
     // printf("(%8ld) [MIDI] PitchBend: %5d\n", HAL_GetTick(), bendVal);
     pitchBend = bendVal;    // update global variable
     // pitch bend all currently plaing notes
-    // printf("Dumb\n");
-    for (int i = 0; i < NUM_CHANNELS; i++) {
-        int8_t note = curNotePlaying[i];
-        if (note != -1) {
-            toneOutputWrite(i, calculateFrequency(note), false);
+    for (int i = 0; i < NUM_CONCURRENT_NOTES; i++) {
+        curNote_t *note = &curNotePlaying[i];
+        if (note->note != -1) {
+            note->freq = calculateFrequency(note->note); // recalculate note frequency
+            // Trigger note update
+            toneOutputWrite(i, note->freq, false);
         }
     }
 }
@@ -81,8 +91,9 @@ void midiHandlerCtrlChange(uint8_t ch, uint8_t num, uint8_t value) {
             case MidiController::AllSoundsOff:
             case MidiController::AllNotesOff:
                 // turn off all channels
-                for (int i = 0; i < NUM_CHANNELS; i++) {
-                    curNotePlaying[i] = -1;
+                for (int i = 0; i < NUM_CONCURRENT_NOTES; i++) {
+                    curNotePlaying[i].note = -1;
+                    // Trigger note update
                     toneOutputWrite(i, 0);
                 }
             break;
@@ -91,7 +102,10 @@ void midiHandlerCtrlChange(uint8_t ch, uint8_t num, uint8_t value) {
 }
 
 void midiHandlerInit() {
-    memset(curNotePlaying, -1, NUM_CHANNELS);
+    // intialize currently playing notes as off
+    for (int i = 0; i < NUM_CONCURRENT_NOTES; i++) {
+        curNotePlaying[i].note = -1;
+    }
 
     midiSetCbNoteOn(midiHandlerNoteOn);
     midiSetCbNoteOff(midiHandlerNoteOff);

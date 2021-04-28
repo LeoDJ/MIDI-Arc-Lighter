@@ -45,6 +45,8 @@ int main(void) {
     MX_TIM1_Init();
     MX_TIM14_Init();
     MX_TIM15_Init();
+    MX_TIM16_Init();
+    MX_TIM17_Init();
     MX_USART1_UART_Init();
 
     HAL_Delay(50); // delay needed for new device to enumerate after DFU upload

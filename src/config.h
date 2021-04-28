@@ -5,9 +5,13 @@
 #define NOTE_FREQ       1000000 // Hz, accuracy of note timers
 
 #define TONE_MODULATION_TIMER   htim1
-#define TONE_CH1_TIMER          htim14
-#define TONE_CH2_TIMER          htim15
-#define NUM_CHANNELS            2
+#define TONE_TIMER_0            htim14  // tone timers are mapped to hardware channels based on odd/evenness
+#define TONE_TIMER_1            htim15  // to add additional tone timers, go to CubeMX, enter "NOTE_PRESC" as Prescaler and enable the gloabl TIM interrupt
+#define TONE_TIMER_2            htim16  // and add them in toneOutput.cpp
+#define TONE_TIMER_3            htim17
+#define NUM_CONCURRENT_NOTES    4       // supported notes for polyphony, limited by hardware timers
+#define NUM_CHANNELS            2       // hardware arc channels
+
 
 #define PRINTF_UART             huart1
 

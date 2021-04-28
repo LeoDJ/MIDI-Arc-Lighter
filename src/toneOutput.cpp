@@ -68,28 +68,53 @@ void toneOutputWrite(uint8_t channel, float freq, bool newNote) {
     }
 }
 
+typedef struct {
+    uint8_t activeTimerCount;   // number of timers currently running
+    uint8_t timerOutputCount;   // number of timers that are currently outputting 1
+} activeTimerCount_t;
+
+inline activeTimerCount_t getActiveTimersForHwChannel(uint8_t hwChannel) {
+    uint8_t activeTimers = 0;
+    uint8_t activeTimerOutputs = 0;
+    for (int i = 0; i < numToneTimers / 2; i++) {
+        uint8_t timerIdx = hwChannel + (i * NUM_CHANNELS);
+        if (toneTimers[timerIdx]->Instance->CR1 & TIM_CR1_CEN) {
+            activeTimers++;
+        }
+        if (toneTimerOutputState[timerIdx]) {
+            activeTimerOutputs++;
+        }
+    }
+    return {activeTimers, activeTimerOutputs};
+}
+
+#define POLYPHONY_PERCENT   10
+
 inline void toggleCh(uint8_t channel) {
-    printf("%d %d %d %d\n", 
-        toneTimerOutputState[0],
-        toneTimerOutputState[1],
-        toneTimerOutputState[2],
-        toneTimerOutputState[3]);
+    // printf("%d %d %d %d\n", 
+    //     toneTimerOutputState[0],
+    //     toneTimerOutputState[1],
+    //     toneTimerOutputState[2],
+    //     toneTimerOutputState[3]);
+    activeTimerCount_t state = getActiveTimersForHwChannel(channel);
+    uint32_t duty = (state.activeTimerCount == 2) ? (PWM_DUTY_CYCLE - POLYPHONY_PERCENT + POLYPHONY_PERCENT * (state.timerOutputCount)) : (PWM_DUTY_CYCLE);
+    printf("ch: %d, duty: %2d, timers: %d, on: %d\n", channel, duty, state.activeTimerCount, state.timerOutputCount);
     switch (channel) {
         case 0:
-            if (TONE_MODULATION_TIMER.Instance->CCR1 == 0) { // toggle PWM channel 1
-                TONE_MODULATION_TIMER.Instance->CCR1 = PWM_PRESC * PWM_DUTY_CYCLE / 100;
+            if (state.timerOutputCount || state.activeTimerCount == 2) { // toggle PWM channel 1
+                TONE_MODULATION_TIMER.Instance->CCR1 = PWM_PRESC * duty / 100;
             }
             else {
-                if (!toneTimerOutputState[0] && !toneTimerOutputState[2])
+                // if (!toneTimerOutputState[0] && !toneTimerOutputState[2])
                     TONE_MODULATION_TIMER.Instance->CCR1 = 0;
             }
         break;
         case 1:
-            if (TONE_MODULATION_TIMER.Instance->CCR2 == PWM_PRESC) { // toggle PWM channel 2 (inverted), off = max value
-                TONE_MODULATION_TIMER.Instance->CCR2 = PWM_PRESC * (100 - PWM_DUTY_CYCLE) / 100; // inverted
+            if (state.timerOutputCount || state.activeTimerCount == 2) { // toggle PWM channel 2 (inverted), off = max value
+                TONE_MODULATION_TIMER.Instance->CCR2 = PWM_PRESC * (100 - duty) / 100; // inverted
             }
             else {
-                if (!toneTimerOutputState[1] && !toneTimerOutputState[3])
+                // if (!toneTimerOutputState[1] && !toneTimerOutputState[3])
                 TONE_MODULATION_TIMER.Instance->CCR2 = PWM_PRESC; // inverted channel, off = max value
             }
         break;

@@ -11,7 +11,7 @@
 // #define TONE_TIMER_3            htim17
 #define NUM_CONCURRENT_NOTES    8       // supported notes for arpeggio
 #define NUM_CHANNELS            2       // hardware arc channels
-#define ARPEGGIO_FREQ           25      // Hz
+#define ARPEGGIO_FREQ           30      // Hz
 
 
 #define PRINTF_UART             huart1

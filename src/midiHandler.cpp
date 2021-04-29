@@ -11,9 +11,11 @@ typedef struct {
 } curNote_t;
 
 static curNote_t curNotePlaying[NUM_CONCURRENT_NOTES];
-static curNote_t *curArpNotes[NUM_CHANNELS];
 
 uint16_t pitchBend = 8192;
+uint32_t lastArpSwitch = 0;
+uint8_t arpCounter = 0;
+uint8_t prevNumNotesPlaying = 0;
 
 static int getCurNoteIdx(uint8_t note) {
     for (int i = 0; i < NUM_CONCURRENT_NOTES; i++) {
@@ -57,6 +59,20 @@ curNote_t *getCurNote(uint8_t pos) {
     return NULL;
 }
 
+void printCurNotes() {
+    printf("(%8ld) ", HAL_GetTick());
+    for (int i = 0; i < NUM_CONCURRENT_NOTES; i++) {
+        int8_t n = curNotePlaying[i].note;
+        if (n > -1) 
+            printf("%3d ", curNotePlaying[i].note);
+        else
+            printf("  . ");
+    }
+    printf("  %d", arpCounter);
+    printf("   %s", getCurNoteNumPlaying() > 2 ? "ARP" : (getCurNoteNumPlaying() == 0 ? "Off" : "Normal"));
+    printf("\n");
+}
+
 // float implementation is uses ~14kB Flash, powf is 7.5k of that. TODO: optimize?
 static float calculateFrequency(uint8_t noteNum) {
     // formula from https://dsp.stackexchange.com/a/1650/57059
@@ -68,13 +84,14 @@ static float calculateFrequency(uint8_t noteNum) {
 
 void midiHandlerNoteOn(uint8_t ch, uint8_t note, uint8_t vel) {
     int idx = getFreeCurNoteIdx();
-    printf("(%8ld) [MIDI] On:  %3d, Slot: %d", HAL_GetTick(), note, idx);
+    printf("(%8ld) [MIDI] On:  %3d, Slot: %2d, Midi Ch: %2d", HAL_GetTick(), note, idx, ch);
     if (idx != -1) {
         curNotePlaying[idx].note = note;
         curNotePlaying[idx].channel = ch; // currently unused
         curNotePlaying[idx].newNote = true;
         curNotePlaying[idx].freq = calculateFrequency(note);
 
+        // printCurNotes();
         midiHandlerUpdateNotes(); // trigger update
     }
     else {
@@ -84,10 +101,11 @@ void midiHandlerNoteOn(uint8_t ch, uint8_t note, uint8_t vel) {
 }
 
 void midiHandlerNoteOff(uint8_t ch, uint8_t note, uint8_t vel) {
-    printf("(%8ld) [MIDI] Off: %3d\n", HAL_GetTick(), note);
     int idx = getCurNoteIdx(note);
+    printf("(%8ld) [MIDI] Off: %3d, Slot: %2d, Midi Ch: %2d\n", HAL_GetTick(), note, idx, ch);
     if (idx != -1) {
         curNotePlaying[idx].note = -1;
+        // printCurNotes();
         midiHandlerUpdateNotes(); // trigger update
     }
 }
@@ -137,10 +155,6 @@ void midiHandlerInit() {
     midiSetCbPitchBend(midiHandlerPitchBend);
 }
 
-uint32_t lastArpSwitch = 0;
-uint8_t arpCounter = 0;
-uint8_t prevNumNotesPlaying = 0;
-
 void midiHandlerUpdateNotes() {
     uint8_t numNotesPlaying = getCurNoteNumPlaying();
     if (numNotesPlaying == 0) { // disable all notes
@@ -149,16 +163,19 @@ void midiHandlerUpdateNotes() {
         }
     }
     else if (numNotesPlaying > 0 && numNotesPlaying <= NUM_CHANNELS) { // play the notes directly on the channels
-        for (int i = 0; i < numNotesPlaying; i++) {
+        for (int i = 0; i < NUM_CHANNELS; i++) {
             curNote_t *note = getCurNote(i);
             if (note != NULL) {
+                // printf("\n%d %d\n", i, note->note);
                 toneOutputWrite(i, note->freq, note->newNote);
                 note->newNote = false;
             }
             else {
+                // printf("\n%d NULL\n", i);
                 toneOutputWrite(i, 0); // deactivate other channels, TODO: deal with notes sliding between channels
             }
         }
+        arpCounter = 0; // reset ARP counter
     }
     else { // do arpeggiator
         if (HAL_GetTick() - lastArpSwitch >= ARPEGGIO_MS) {
@@ -166,6 +183,11 @@ void midiHandlerUpdateNotes() {
             uint8_t numNotesPlaying = getCurNoteNumPlaying();
             if (numNotesPlaying > 2) {
                 uint8_t arpeggiatorSteps = (numNotesPlaying + NUM_CHANNELS - 1) / NUM_CHANNELS; // calculate number of arp steps
+                
+                // reset ARP counter at the beginning, so it also gets reset if it was left too high
+                if (arpCounter >= arpeggiatorSteps) {
+                    arpCounter = 0;
+                }
 
                 // do arpeggio
                 uint8_t ch = 0;
@@ -181,9 +203,6 @@ void midiHandlerUpdateNotes() {
                 }
 
                 arpCounter++;
-                if (arpCounter >= arpeggiatorSteps) {
-                    arpCounter = 0;
-                }
             }
         }
     }
@@ -192,7 +211,7 @@ void midiHandlerUpdateNotes() {
 // Arpeggiator loop
 // TODO: handle pitchbend without delay
 void midiHandlerArpLoop() {
-    if (HAL_GetTick() - lastArpSwitch >= ARPEGGIO_MS) {
+    if (HAL_GetTick() - lastArpSwitch >= ARPEGGIO_MS && getCurNoteNumPlaying() > NUM_CHANNELS) {
         midiHandlerUpdateNotes();
     }
 }

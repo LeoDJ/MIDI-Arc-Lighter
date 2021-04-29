@@ -6,6 +6,7 @@
 typedef struct {
     int8_t note;    // MIDI note number, -1 for no note
     int8_t channel; // MIDI channel, currently not used
+    bool newNote;   // set to true if this note was just received
     float freq;     // calculated frequency, buffered for arpeggio
 } curNote_t;
 
@@ -71,12 +72,10 @@ void midiHandlerNoteOn(uint8_t ch, uint8_t note, uint8_t vel) {
     if (idx != -1) {
         curNotePlaying[idx].note = note;
         curNotePlaying[idx].channel = ch; // currently unused
+        curNotePlaying[idx].newNote = true;
         curNotePlaying[idx].freq = calculateFrequency(note);
 
-        // only enable note when arpeggio isn't engaged, else do nothing and let the arpeggiator handle it
-        if (getCurNoteNumPlaying() <= NUM_CHANNELS) {
-            toneOutputWrite(idx, curNotePlaying[idx].freq);
-        }
+        midiHandlerUpdateNotes(); // trigger update
     }
     else {
         printf(" XXX");
@@ -89,10 +88,7 @@ void midiHandlerNoteOff(uint8_t ch, uint8_t note, uint8_t vel) {
     int idx = getCurNoteIdx(note);
     if (idx != -1) {
         curNotePlaying[idx].note = -1;
-        // only disable note when arpeggio isn't engaged, else do nothing and let the other note play
-        if (getCurNoteNumPlaying() <= NUM_CHANNELS) {
-            toneOutputWrite(idx, 0);
-        }
+        midiHandlerUpdateNotes(); // trigger update
     }
 }
 
@@ -105,10 +101,7 @@ void midiHandlerPitchBend(uint8_t ch, uint16_t bendVal) {
         curNote_t *note = &curNotePlaying[i];
         if (note->note != -1) {
             note->freq = calculateFrequency(note->note); // recalculate note frequency
-            // only update note when arpeggio isn't engaged, else do nothing and let the arpeggiator handle it
-            if (numNotesPlaying <= 2) {
-                toneOutputWrite(i, note->freq, false);
-            }
+            midiHandlerUpdateNotes(); // trigger update
         }
     }
 }
@@ -125,7 +118,7 @@ void midiHandlerCtrlChange(uint8_t ch, uint8_t num, uint8_t value) {
                 // turn off all channels
                 for (int i = 0; i < NUM_CONCURRENT_NOTES; i++) {
                     curNotePlaying[i].note = -1;
-                    toneOutputWrite(i, 0);
+                    midiHandlerUpdateNotes(); // trigger update
                 }
             break;
         }
@@ -148,46 +141,58 @@ uint32_t lastArpSwitch = 0;
 uint8_t arpCounter = 0;
 uint8_t prevNumNotesPlaying = 0;
 
+void midiHandlerUpdateNotes() {
+    uint8_t numNotesPlaying = getCurNoteNumPlaying();
+    if (numNotesPlaying == 0) { // disable all notes
+        for (int i = 0; i < NUM_CHANNELS; i++) {
+            toneOutputWrite(i, 0);
+        }
+    }
+    else if (numNotesPlaying > 0 && numNotesPlaying <= NUM_CHANNELS) { // play the notes directly on the channels
+        for (int i = 0; i < numNotesPlaying; i++) {
+            curNote_t *note = getCurNote(i);
+            if (note != NULL) {
+                toneOutputWrite(i, note->freq, note->newNote);
+                note->newNote = false;
+            }
+            else {
+                toneOutputWrite(i, 0); // deactivate other channels, TODO: deal with notes sliding between channels
+            }
+        }
+    }
+    else { // do arpeggiator
+        if (HAL_GetTick() - lastArpSwitch >= ARPEGGIO_MS) {
+            lastArpSwitch = HAL_GetTick();
+            uint8_t numNotesPlaying = getCurNoteNumPlaying();
+            if (numNotesPlaying > 2) {
+                uint8_t arpeggiatorSteps = (numNotesPlaying + NUM_CHANNELS - 1) / NUM_CHANNELS; // calculate number of arp steps
+
+                // do arpeggio
+                uint8_t ch = 0;
+                for (int i = arpCounter * NUM_CHANNELS; i < (arpCounter + 1) * NUM_CHANNELS; i++) {
+                    if (i < numNotesPlaying) {
+                        curNote_t *note = getCurNote(i);
+                        if (note != NULL) {
+                            // printf("(%8ld) [ARP] numNotes: %d, arpSteps: %d, arpCounter: %d, i: %d, ch: %d, note: %d\n", HAL_GetTick(), numNotesPlaying, arpeggiatorSteps, arpCounter, i, ch, note->note);
+                            toneOutputWrite(ch, note->freq, false);
+                            ch++;
+                        }
+                    }
+                }
+
+                arpCounter++;
+                if (arpCounter >= arpeggiatorSteps) {
+                    arpCounter = 0;
+                }
+            }
+        }
+    }
+}
 
 // Arpeggiator loop
 // TODO: handle pitchbend without delay
 void midiHandlerArpLoop() {
     if (HAL_GetTick() - lastArpSwitch >= ARPEGGIO_MS) {
-        lastArpSwitch = HAL_GetTick();
-        uint8_t numNotesPlaying = getCurNoteNumPlaying();
-        if (numNotesPlaying > 2) {
-            uint8_t arpeggiatorSteps = (numNotesPlaying + NUM_CHANNELS - 1) / NUM_CHANNELS; // calculate number of arp steps
-
-            // do arpeggio
-            uint8_t ch = 0;
-            for (int i = arpCounter * NUM_CHANNELS; i < (arpCounter + 1) * NUM_CHANNELS; i++) {
-                if (i < numNotesPlaying) {
-                    curNote_t *note = getCurNote(i);
-                    if (note != NULL) {
-                        printf("(%8ld) [ARP] numNotes: %d, arpSteps: %d, arpCounter: %d, i: %d, ch: %d, note: %d\n", HAL_GetTick(), numNotesPlaying, arpeggiatorSteps, arpCounter, i, ch, note->note);
-                        toneOutputWrite(ch, note->freq, false);
-                        ch++;
-                    }
-                }
-            }
-
-            arpCounter++;
-            if (arpCounter >= arpeggiatorSteps) {
-                arpCounter = 0;
-            }
-        }
-
-        // if arp gets disabled, restore the only two playing notes
-        if (numNotesPlaying == NUM_CHANNELS && prevNumNotesPlaying > NUM_CHANNELS) {
-            uint8_t ch = 0;
-            for (int i = 0; i < NUM_CONCURRENT_NOTES; i++) {
-                if (curNotePlaying[i].note != -1) {
-                    toneOutputWrite(ch, curNotePlaying[i].freq, false);
-                    ch++;
-                }
-            }
-        }
-
-        prevNumNotesPlaying = numNotesPlaying;
+        midiHandlerUpdateNotes();
     }
 }

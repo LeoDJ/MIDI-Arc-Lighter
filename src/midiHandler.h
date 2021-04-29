@@ -5,3 +5,4 @@
 
 void midiHandlerInit();
 void midiHandlerArpLoop();
+void midiHandlerUpdateNotes();

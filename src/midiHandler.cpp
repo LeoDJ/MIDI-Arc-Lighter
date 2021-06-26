@@ -166,6 +166,12 @@ void midiHandlerUpdateNotes() {
         for (int i = 0; i < NUM_CHANNELS; i++) {
             curNote_t *note = getCurNote(i);
             if (note != NULL) {
+                // workaround for note sliding down in channel and when sliding back up it doesn't get played anymore
+                // probably won't work for NUM_CHANNELS > 2 and also might not fix some slight arpeggio glitching, but it works for now
+                // otherwise I'd need to handle new note events and currently playing notes completely differently, that's a TODO for another time
+                if (numNotesPlaying == NUM_CHANNELS && prevNumNotesPlaying == 1 && i == 1) {
+                    note->newNote = true;
+                }
                 // printf("\n%d %d\n", i, note->note);
                 toneOutputWrite(i, note->freq, note->newNote);
                 note->newNote = false;
@@ -206,6 +212,7 @@ void midiHandlerUpdateNotes() {
             }
         }
     }
+    prevNumNotesPlaying = numNotesPlaying;
 }
 
 // Arpeggiator loop

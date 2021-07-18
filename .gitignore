@@ -6,3 +6,9 @@
 
 .vscode
 %AppData%
+
+src/cubemx/Src/usb*
+src/cubemx/Inc/usb*
+src/cubemx/Middlewares
+
+doc

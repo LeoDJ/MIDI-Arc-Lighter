@@ -266,6 +266,10 @@ __ALIGN_BEGIN  uint8_t USBD_MSC_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_DESC] 
   */
 
 
+// statically allocate msc instance instead of USB "malloc"
+USBD_MSC_BOT_HandleTypeDef mscInstance;
+
+
 /** @defgroup MSC_CORE_Private_Functions
   * @{
   */
@@ -299,9 +303,10 @@ uint8_t USBD_MSC_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
     USBD_LL_OpenEP(pdev, MSC_EPIN_ADDR, USBD_EP_TYPE_BULK, MSC_MAX_FS_PACKET);
     pdev->ep_in[MSC_EPIN_ADDR & 0xFU].is_used = 1U;
   }
-  pdev->pClassData = USBD_malloc(sizeof(USBD_MSC_BOT_HandleTypeDef));
+  // pdev->pClassDataMSC = USBD_malloc(sizeof(USBD_MSC_BOT_HandleTypeDef));
+  pdev->pClassDataMSC = &mscInstance;
 
-  if (pdev->pClassData == NULL)
+  if (pdev->pClassDataMSC == NULL)
   {
     return USBD_FAIL;
   }
@@ -334,10 +339,10 @@ uint8_t USBD_MSC_DeInit(USBD_HandleTypeDef *pdev,
   MSC_BOT_DeInit(pdev);
 
   /* Free MSC Class Resources */
-  if (pdev->pClassData != NULL)
+  if (pdev->pClassDataMSC != NULL)
   {
-    USBD_free(pdev->pClassData);
-    pdev->pClassData  = NULL;
+    // USBD_free(pdev->pClassDataMSC);
+    pdev->pClassDataMSC  = NULL;
   }
 
   return USBD_OK;
@@ -351,7 +356,7 @@ uint8_t USBD_MSC_DeInit(USBD_HandleTypeDef *pdev,
 */
 uint8_t USBD_MSC_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 {
-  USBD_MSC_BOT_HandleTypeDef *hmsc = (USBD_MSC_BOT_HandleTypeDef *) pdev->pClassData;
+  USBD_MSC_BOT_HandleTypeDef *hmsc = (USBD_MSC_BOT_HandleTypeDef *) pdev->pClassDataMSC;
   uint8_t ret = USBD_OK;
   uint16_t status_info = 0U;
 
@@ -365,7 +370,7 @@ uint8_t USBD_MSC_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
           if ((req->wValue  == 0U) && (req->wLength == 1U) &&
               ((req->bmRequest & 0x80U) == 0x80U))
           {
-            hmsc->max_lun = (uint32_t)((USBD_StorageTypeDef *)pdev->pUserData)->GetMaxLun();
+            hmsc->max_lun = (uint32_t)((USBD_StorageTypeDef *)pdev->pClassSpecificInterfaceMSC)->GetMaxLun();
             USBD_CtlSendData(pdev, (uint8_t *)(void *)&hmsc->max_lun, 1U);
           }
           else
@@ -585,7 +590,7 @@ uint8_t USBD_MSC_RegisterStorage(USBD_HandleTypeDef *pdev,
 {
   if (fops != NULL)
   {
-    pdev->pUserData = fops;
+    pdev->pClassSpecificInterfaceMSC = fops;
   }
 
   return USBD_OK;

@@ -29,6 +29,7 @@ extern "C" {
 #include  "usbd_msc_bot.h"
 #include  "usbd_msc_scsi.h"
 #include  "usbd_ioreq.h"
+#include  "usbd_composite.h"
 
 /** @addtogroup USBD_MSC_BOT
   * @{
@@ -56,8 +57,8 @@ extern "C" {
 #define USB_MSC_CONFIG_DESC_SIZ      32
 
 
-#define MSC_EPIN_ADDR                0x81U
-#define MSC_EPOUT_ADDR               0x01U
+#define MSC_EPIN_ADDR                COMP_EP_IDX_MSC_IN
+#define MSC_EPOUT_ADDR               COMP_EP_IDX_MSC
 
 /**
   * @}

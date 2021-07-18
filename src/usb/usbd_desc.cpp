@@ -63,13 +63,13 @@
   * @{
   */
 
-#define USBD_VID                        0x0483
+#define USBD_VID                        0x33ff
 #define USBD_LANGID_STRING              1033
-#define USBD_MANUFACTURER_STRING        "STMicroelectronics"
-#define USBD_PID_FS                     0x5740
-#define USBD_PRODUCT_STRING_FS          "STM32 CDC MIDI Composite"
-#define USBD_CONFIGURATION_STRING_FS    "CDC Config"
-#define USBD_INTERFACE_STRING_FS        "CDC Interface"
+#define USBD_MANUFACTURER_STRING        "Gingerlabs"
+#define USBD_PID_FS                     0x4025
+#define USBD_PRODUCT_STRING_FS          "MIDI Arc Lighter"
+#define USBD_CONFIGURATION_STRING_FS    "ArcLighter Config"
+#define USBD_INTERFACE_STRING_FS        "ArcLighter Interface"
 
 /* USER CODE BEGIN PRIVATE_DEFINES */
 

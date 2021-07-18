@@ -345,6 +345,9 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
   HAL_PCDEx_PMAConfig(pdev->pPCDHandle , COMP_EP_IDX_MIDI_IN,     PCD_SNG_BUF, pmaAddr += 0x40);  // 0x150
   HAL_PCDEx_PMAConfig(pdev->pPCDHandle , COMP_EP_IDX_MIDI,        PCD_SNG_BUF, pmaAddr += 0x40);  // 0x190
 
+  HAL_PCDEx_PMAConfig(pdev->pPCDHandle , COMP_EP_IDX_MSC_IN,      PCD_SNG_BUF, pmaAddr += 0x40);  // 0x1D0
+  HAL_PCDEx_PMAConfig(pdev->pPCDHandle , COMP_EP_IDX_MSC,         PCD_SNG_BUF, pmaAddr += 0x40);  // 0x210
+
   return USBD_OK;
 }
 

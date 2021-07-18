@@ -8,6 +8,7 @@
 #include "usbd_ctlreq.h"
 #include "usbd_cdc.h"
 #include "usbd_midi.h"
+#include "usbd_msc.h"
 
 
 static uint8_t USBD_Composite_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx);
@@ -50,7 +51,7 @@ static uint8_t USBD_Composite_CfgDesc[USB_Composite_CONFIG_DESC_SIZ] = {
     USB_DESC_TYPE_CONFIGURATION,    /* bDescriptorType: Configuration */
     USB_Composite_CONFIG_DESC_SIZ,  /* wTotalLength: Bytes returned */
     0x00,
-    0x04,                           /*bNumInterfaces: 4 interfaces (CDC + MIDI) */
+    0x05,                           /*bNumInterfaces: 5 interfaces (CDC + MIDI + MSC) */
     0x01,                           /*bConfigurationValue: Configuration value*/
     0x02,                           /*iConfiguration: Index of string descriptor describing the configuration*/
     0xC0,                           /*bmAttributes: bus powered and Supports Remote Wakeup */
@@ -275,6 +276,40 @@ static uint8_t USBD_Composite_CfgDesc[USB_Composite_CONFIG_DESC_SIZ] = {
 #endif 
 
 
+#if 1 // MSC
+    // ---------------------------------------------------------------------------
+    // MSC Descriptor
+
+    // Interface Descriptor 
+    0x09,                       // bLength
+    USB_DESC_TYPE_INTERFACE,    // bDescriptorType: Interface
+    COMP_INTERFACE_IDX_MSC,     // bInterfaceNumber
+    0x00,                       // bAlternateSetting
+    0x02,                       // bNumEndpoints: 2
+    0x08,                       // bInterfaceClass: MSC
+    0x06,                       // bInterfaceSubClass: SCSI transparent command set
+    0x50,                       // bInterfaceProtocol: Bulk-Only Transport
+    0x00,                       // iInterface: Index of string descriptor
+
+    // Bulk-In Endpoint Descriptor
+    0x07,                           // bLength
+    USB_DESC_TYPE_ENDPOINT,         // bDescriptorType: Endpoint
+    COMP_EP_IDX_MSC_IN,             // bEndpointAddress
+    USBD_EP_TYPE_BULK,              // bmAttributes: Bulk
+    LOBYTE(USB_FS_MAX_PACKET_SIZE), // wMaxPacketSize
+    HIBYTE(USB_FS_MAX_PACKET_SIZE),
+    0x00,                           // bInterval: ignore for Bulk transfer
+
+    // Bulk-Out Endpoint Descriptor
+    0x07,                           // bLength
+    USB_DESC_TYPE_ENDPOINT,         // bDescriptorType: Endpoint
+    COMP_EP_IDX_MSC,                // bEndpointAddress
+    USBD_EP_TYPE_BULK,              // bmAttributes: Bulk
+    LOBYTE(USB_FS_MAX_PACKET_SIZE), // wMaxPacketSize
+    HIBYTE(USB_FS_MAX_PACKET_SIZE),
+    0x00,                           // bInterval: ignore for Bulk transfer
+
+#endif
 };
 
 #if defined ( __ICCARM__ ) /*!< IAR Compiler */
@@ -313,6 +348,10 @@ static uint8_t USBD_Composite_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx) {
     USBD_DbgLog("MIDI: %d ", ret);
     if (ret != USBD_OK)
         return ret;
+    ret = USBD_MSC.Init(pdev, cfgidx);
+    USBD_DbgLog("MSC: %d ", ret);
+    if (ret != USBD_OK)
+        return ret;
     USBD_DbgLog("\n");
     
     return USBD_OK;
@@ -329,6 +368,7 @@ static uint8_t USBD_Composite_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx) {
     USBD_DbgLog("[USB Deinit]\n");
     USBD_CDC.DeInit(pdev, cfgidx);
     USBD_MIDI.DeInit(pdev, cfgidx);
+    USBD_MSC.DeInit(pdev, cfgidx);
     return USBD_OK;
 }
 
@@ -387,6 +427,8 @@ static uint8_t USBD_Composite_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTyped
             case COMP_INTERFACE_IDX_MIDI:
             case COMP_INTERFACE_IDX_MIDI_STREAM:
                 return USBD_MIDI.Setup(pdev, req);
+            case COMP_INTERFACE_IDX_MSC:
+                return USBD_MSC.Setup(pdev, req);
         }
     }
     else if (recipient == USB_REQ_RECIPIENT_ENDPOINT) {
@@ -397,6 +439,9 @@ static uint8_t USBD_Composite_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTyped
             case COMP_EP_IDX_MIDI:
             case COMP_EP_IDX_MIDI_IN:
                 return USBD_MIDI.Setup(pdev, req);
+            case COMP_EP_IDX_MSC:
+            case COMP_EP_IDX_MSC_IN:
+                return USBD_MSC.Setup(pdev, req);
         }
     }
 
@@ -445,6 +490,8 @@ static uint8_t USBD_Composite_DataIn(USBD_HandleTypeDef *pdev, uint8_t epnum) {
             return USBD_CDC.DataIn(pdev, epnum);
         case COMP_EP_IDX_MIDI:
             return USBD_MIDI.DataIn(pdev, epnum);
+        case COMP_EP_IDX_MSC:
+            return USBD_MSC.DataIn(pdev, epnum);
         default:
             return USBD_OK;
     }
@@ -466,6 +513,8 @@ static uint8_t USBD_Composite_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum) {
             return USBD_CDC.DataOut(pdev, epnum);
         case COMP_EP_IDX_MIDI:
             return USBD_MIDI.DataOut(pdev, epnum);
+        case COMP_EP_IDX_MSC:
+            return USBD_MSC.DataOut(pdev, epnum);
         default:
             return USBD_OK;
     }

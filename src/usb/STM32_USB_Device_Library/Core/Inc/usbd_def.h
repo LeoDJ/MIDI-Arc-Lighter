@@ -265,6 +265,8 @@ typedef struct _USBD_HandleTypeDef
   void                    *pClassDataCDC;               // USBD_CDC_HandleTypeDef
   void                    *pClassSpecificInterfaceCDC;  // USBD_CDC_ItfTypeDef
   void                    *pClassSpecificInterfaceMIDI; // USBD_MIDI_ItfTypeDef
+  void                    *pClassDataMSC;               // USBD_MSC_BOT_HandleTypeDef
+  void                    *pClassSpecificInterfaceMSC;  // USBD_StorageTypeDef
   
   PCD_HandleTypeDef       *pPCDHandle;
 } USBD_HandleTypeDef;

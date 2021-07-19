@@ -60,6 +60,28 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define LED_Pin GPIO_PIN_13
 #define LED_GPIO_Port GPIOC
+#define V_BAT_Pin GPIO_PIN_0
+#define V_BAT_GPIO_Port GPIOA
+#define USB_ID_Pin GPIO_PIN_2
+#define USB_ID_GPIO_Port GPIOA
+#define NTC1_Pin GPIO_PIN_0
+#define NTC1_GPIO_Port GPIOB
+#define NTC2_Pin GPIO_PIN_1
+#define NTC2_GPIO_Port GPIOB
+#define LED_2_R_Pin GPIO_PIN_2
+#define LED_2_R_GPIO_Port GPIOB
+#define LED_2_B_Pin GPIO_PIN_10
+#define LED_2_B_GPIO_Port GPIOB
+#define LED_2_G_Pin GPIO_PIN_11
+#define LED_2_G_GPIO_Port GPIOB
+#define FLASH_RST_Pin GPIO_PIN_14
+#define FLASH_RST_GPIO_Port GPIOB
+#define FLASH_WP_Pin GPIO_PIN_15
+#define FLASH_WP_GPIO_Port GPIOB
+#define LED_1_B_Pin GPIO_PIN_5
+#define LED_1_B_GPIO_Port GPIOB
+#define CHARGE_STATE_Pin GPIO_PIN_8
+#define CHARGE_STATE_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

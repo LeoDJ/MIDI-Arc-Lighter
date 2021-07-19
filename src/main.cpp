@@ -9,6 +9,7 @@
 #include "tim.h"
 #include "usb_device.h"
 #include "usart.h"
+#include "spi.h"
 #include "usbd_cdc_if.h"
 
 #include "config.h"
@@ -48,6 +49,7 @@ int main(void) {
     MX_TIM16_Init();
     MX_TIM17_Init();
     MX_USART1_UART_Init();
+    MX_SPI1_Init();
 
     HAL_Delay(50); // delay needed for new device to enumerate after DFU upload
     MX_USB_DEVICE_Init();

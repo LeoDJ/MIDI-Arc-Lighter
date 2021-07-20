@@ -193,8 +193,8 @@ int8_t STORAGE_Init_FS(uint8_t lun)
 int8_t STORAGE_GetCapacity_FS(uint8_t lun, uint32_t *block_num, uint16_t *block_size)
 {
   /* USER CODE BEGIN 3 */
-  *block_num  = STORAGE_BLK_NBR;
-  *block_size = STORAGE_BLK_SIZ;
+  *block_num  = flashGetBlockSize();
+  *block_size = flashGetBlockSize();
   return (USBD_OK);
   /* USER CODE END 3 */
 }
@@ -231,11 +231,12 @@ int8_t STORAGE_IsWriteProtected_FS(uint8_t lun)
 int8_t STORAGE_Read_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len)
 {
   /* USER CODE BEGIN 6 */
-  uint32_t startAddr = blk_addr * STORAGE_BLK_SIZ;
-  uint32_t len = blk_len * STORAGE_BLK_SIZ;
+  uint32_t startAddr = blk_addr * flashGetBlockSize();
+  uint32_t len = blk_len * flashGetBlockSize();
 
-  printf("[MSC] READ blk_addr: %lu, blk_len: %u, addr: %lu, len: %lu\n", blk_addr, blk_len, startAddr, len);
-  flashRead(startAddr, len, buf);
+  printf("[MSC] READ  blk_addr: %4lu, blk_len: %2u, addr: %8lu, len: %lu\n", blk_addr, blk_len, startAddr, len);
+  // flashRead(startAddr, len, buf);
+  flashReadBlock(blk_addr, blk_len, buf);
 
   return (USBD_OK);
   /* USER CODE END 6 */
@@ -249,11 +250,12 @@ int8_t STORAGE_Read_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t bl
 int8_t STORAGE_Write_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len)
 {
   /* USER CODE BEGIN 7 */
-  uint32_t startAddr = blk_addr * STORAGE_BLK_SIZ;
-  uint32_t len = blk_len * STORAGE_BLK_SIZ;
+  uint32_t startAddr = blk_addr * flashGetBlockSize();
+  uint32_t len = blk_len * flashGetBlockSize();
 
-  printf("[MSC] WRITE blk_addr: %lu, blk_len: %u, addr: %lu, len: %lu\n", blk_addr, blk_len, startAddr, len);
-  flashWrite(startAddr, len, buf);
+  printf("[MSC] WRITE blk_addr: %4lu, blk_len: %2u, addr: %8lu, len: %lu\n", blk_addr, blk_len, startAddr, len);
+  // flashWrite(startAddr, len, buf);
+  flashWriteBlock(blk_addr, blk_len, buf);
 
   return (USBD_OK);
   /* USER CODE END 7 */

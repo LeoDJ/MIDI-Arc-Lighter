@@ -10,6 +10,7 @@
 #include "usb_device.h"
 #include "usart.h"
 #include "spi.h"
+#include "fatfs.h"
 
 #include "config.h"
 #include "toneOutput.h"
@@ -51,6 +52,8 @@ int main(void) {
     MX_TIM17_Init();
     MX_USART1_UART_Init();
     MX_SPI1_Init();
+    MX_FATFS_Init();
+    
 
     HAL_Delay(50); // delay needed for new device to enumerate after DFU upload
     MX_USB_DEVICE_Init();
@@ -61,6 +64,9 @@ int main(void) {
     midiInit();         // initialize midi buffers
     midiHandlerInit();  // register midi handler callbacks
     flashInit();
+
+    flashLs("");
+
     // toneOutputWrite(0, 20);
     // toneOutputWrite(1, 20);
 

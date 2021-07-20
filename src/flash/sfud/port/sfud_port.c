@@ -51,6 +51,8 @@ static sfud_err spi_write_read(const sfud_spi *spi, const uint8_t *write_buf, si
 
     HAL_StatusTypeDef halStatus = HAL_OK;
 
+    HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, 0);
+
     if (write_size) {
         halStatus = HAL_SPI_Transmit(&hspi1, (uint8_t *)write_buf, write_size, 100);
         // printf("[SPI TX] Status: %d, Data: ", halStatus);
@@ -82,6 +84,8 @@ static sfud_err spi_write_read(const sfud_spi *spi, const uint8_t *write_buf, si
             result = SFUD_ERR_READ;
         }
     }
+    
+    HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, 1);
 
     return result;
 }

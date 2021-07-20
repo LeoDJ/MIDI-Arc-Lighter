@@ -64,6 +64,8 @@ void Error_Handler(void);
 #define V_BAT_GPIO_Port GPIOA
 #define USB_ID_Pin GPIO_PIN_2
 #define USB_ID_GPIO_Port GPIOA
+#define SPI1_NSS_Pin GPIO_PIN_4
+#define SPI1_NSS_GPIO_Port GPIOA
 #define NTC1_Pin GPIO_PIN_0
 #define NTC1_GPIO_Port GPIOB
 #define NTC2_Pin GPIO_PIN_1

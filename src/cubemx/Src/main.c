@@ -21,6 +21,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "fatfs.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
@@ -100,6 +101,7 @@ int main(void)
   MX_TIM16_Init();
   MX_TIM17_Init();
   MX_SPI1_Init();
+  MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */

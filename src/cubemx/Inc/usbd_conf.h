@@ -73,7 +73,7 @@
 /*---------- -----------*/
 #define USBD_SELF_POWERED     1
 /*---------- -----------*/
-#define MAX_STATIC_ALLOC_SIZE     512
+#define MSC_MEDIA_PACKET     4096
 
 /****************************************/
 /* #define for FS and HS identification */

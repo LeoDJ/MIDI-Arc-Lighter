@@ -9,6 +9,6 @@
 
 src/cubemx/Src/usb*
 src/cubemx/Inc/usb*
-src/cubemx/Middlewares
+src/cubemx/Middlewares/ST
 
 doc

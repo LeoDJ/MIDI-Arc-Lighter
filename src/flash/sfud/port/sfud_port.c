@@ -28,6 +28,7 @@
 
 #include <sfud.h>
 #include <stdarg.h>
+#include "spi.h"
 
 static char log_buf[256];
 
@@ -39,11 +40,48 @@ void sfud_log_debug(const char *file, const long line, const char *format, ...);
 static sfud_err spi_write_read(const sfud_spi *spi, const uint8_t *write_buf, size_t write_size, uint8_t *read_buf,
         size_t read_size) {
     sfud_err result = SFUD_SUCCESS;
-    uint8_t send_data, read_data;
+    // uint8_t send_data, read_data;
 
-    /**
-     * add your spi write and read code
-     */
+    if (write_size) {
+        SFUD_ASSERT(write_buf);
+    }
+    if (read_size) {
+        SFUD_ASSERT(read_buf);
+    }
+
+    HAL_StatusTypeDef halStatus = HAL_OK;
+
+    if (write_size) {
+        halStatus = HAL_SPI_Transmit(&hspi1, (uint8_t *)write_buf, write_size, 100);
+        // printf("[SPI TX] Status: %d, Data: ", halStatus);
+        // for (size_t i = 0; i < write_size; i++) {
+        //     printf("%02X ", write_buf[i]);
+        // }
+        // printf("\n");
+
+        if (halStatus == HAL_TIMEOUT) {
+            result = SFUD_ERR_TIMEOUT;
+        }
+        else if (halStatus != HAL_OK) {
+            result = SFUD_ERR_WRITE;
+        }
+    }
+
+    if (read_size && halStatus == HAL_OK) {
+        halStatus = HAL_SPI_Receive(&hspi1, read_buf, read_size, 100);
+        // printf("[SPI RX] Status: %d, Data: ", halStatus);
+        // for (size_t i = 0; i < read_size; i++) {
+        //     printf("%02X ", read_buf[i]);
+        // }
+        // printf("\n");
+
+        if (halStatus == HAL_TIMEOUT) {
+            result = SFUD_ERR_TIMEOUT;
+        }
+        else if (halStatus != HAL_OK) {
+            result = SFUD_ERR_READ;
+        }
+    }
 
     return result;
 }
@@ -64,6 +102,12 @@ static sfud_err qspi_read(const struct __sfud_spi *spi, uint32_t addr, sfud_qspi
 }
 #endif /* SFUD_USING_QSPI */
 
+/* about 100 microsecond delay */
+static void retry_delay_100us(void) {
+    uint32_t delay = 120;
+    while(delay--);
+}
+
 sfud_err sfud_spi_port_init(sfud_flash *flash) {
     sfud_err result = SFUD_SUCCESS;
 
@@ -81,6 +125,12 @@ sfud_err sfud_spi_port_init(sfud_flash *flash) {
      *    flash->retry.delay = null;
      *    flash->retry.times = 10000; //Required
      */
+
+    flash->spi.wr = spi_write_read;
+    // about 100 microsecond delay
+    flash->retry.delay = retry_delay_100us;
+    // adout 60 seconds timeout
+    flash->retry.times = 60 * 10000;
 
     return result;
 }

@@ -21,6 +21,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_storage_if.h"
+#include "flash.h"
 
 /* USER CODE BEGIN INCLUDE */
 
@@ -64,8 +65,8 @@
   */
 
 #define STORAGE_LUN_NBR                  1
-#define STORAGE_BLK_NBR                  0x10000
-#define STORAGE_BLK_SIZ                  0x200
+#define STORAGE_BLK_NBR                  4096  // FAT16 allegedly needs at least 8401 sectors
+#define STORAGE_BLK_SIZ                  4096
 
 /* USER CODE BEGIN PRIVATE_DEFINES */
 
@@ -95,7 +96,7 @@
 
 /* USER CODE BEGIN INQUIRY_DATA_FS */
 /** USB Mass storage Standard Inquiry Data. */
-const int8_t STORAGE_Inquirydata_FS[] = {/* 36 */
+const uint8_t STORAGE_Inquirydata_FS[] = {/* 36 */
   
   /* LUN 0 */
   0x00,
@@ -106,9 +107,9 @@ const int8_t STORAGE_Inquirydata_FS[] = {/* 36 */
   0x00,
   0x00,	
   0x00,
-  'S', 'T', 'M', ' ', ' ', ' ', ' ', ' ', /* Manufacturer : 8 bytes */
-  'P', 'r', 'o', 'd', 'u', 'c', 't', ' ', /* Product      : 16 Bytes */
-  ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+  ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', /* Manufacturer : 8 bytes */
+  'M', 'I', 'D', 'I', ' ', 'A', 'r', 'c', /* Product      : 16 Bytes */
+  ' ', 'L', 'i', 'g', 'h', 't', 'e', 'r',
   '0', '.', '0' ,'1'                      /* Version      : 4 Bytes */
 }; 
 /* USER CODE END INQUIRY_DATA_FS */
@@ -230,6 +231,12 @@ int8_t STORAGE_IsWriteProtected_FS(uint8_t lun)
 int8_t STORAGE_Read_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len)
 {
   /* USER CODE BEGIN 6 */
+  uint32_t startAddr = blk_addr * STORAGE_BLK_SIZ;
+  uint32_t len = blk_len * STORAGE_BLK_SIZ;
+
+  printf("[MSC] READ blk_addr: %lu, blk_len: %u, addr: %lu, len: %lu\n", blk_addr, blk_len, startAddr, len);
+  flashRead(startAddr, len, buf);
+
   return (USBD_OK);
   /* USER CODE END 6 */
 }
@@ -242,6 +249,12 @@ int8_t STORAGE_Read_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t bl
 int8_t STORAGE_Write_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len)
 {
   /* USER CODE BEGIN 7 */
+  uint32_t startAddr = blk_addr * STORAGE_BLK_SIZ;
+  uint32_t len = blk_len * STORAGE_BLK_SIZ;
+
+  printf("[MSC] WRITE blk_addr: %lu, blk_len: %u, addr: %lu, len: %lu\n", blk_addr, blk_len, startAddr, len);
+  flashWrite(startAddr, len, buf);
+
   return (USBD_OK);
   /* USER CODE END 7 */
 }

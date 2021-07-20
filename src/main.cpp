@@ -10,13 +10,14 @@
 #include "usb_device.h"
 #include "usart.h"
 #include "spi.h"
-#include "usbd_cdc_if.h"
 
 #include "config.h"
 #include "toneOutput.h"
-#include "tune.h"
+// #include "tune.h"
+#include "usbd_cdc_if.h"
 #include "usbd_midi_if.h"
 #include "midiHandler.h"
+#include "flash.h"
 
 
 extern "C" {
@@ -59,7 +60,7 @@ int main(void) {
     toneOutputInit();
     midiInit();         // initialize midi buffers
     midiHandlerInit();  // register midi handler callbacks
-
+    flashInit();
     // toneOutputWrite(0, 20);
     // toneOutputWrite(1, 20);
 

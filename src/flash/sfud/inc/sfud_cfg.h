@@ -36,14 +36,15 @@
 #define SFUD_USING_FLASH_INFO_TABLE
 
 enum {
-    SFUD_XXXX_DEVICE_INDEX = 0,
+    SFUD_GD25Q127C_DEVICE_INDEX = 0,
 };
 
+//                                                             | name | mf_id | type_id | capacity_id | capacity | write_mode | erase_gran | erase_gran_cmd |
 #define SFUD_FLASH_DEVICE_TABLE                                                \
 {                                                                              \
-    [SFUD_XXXX_DEVICE_INDEX] = {.name = "XXXX", .spi.name = "SPIX"},           \
+    [SFUD_GD25Q127C_DEVICE_INDEX] = {.name = "GD25Q127C", .chip = {"GD25Q127C", SFUD_MF_ID_GIGADEVICE, 0x40, 0x18, 16L*1024L*1024L, SFUD_WM_PAGE_256B, 4096, 0x20}},           \
 }
 
-#define SFUD_USING_QSPI
+// #define SFUD_USING_QSPI
 
 #endif /* _SFUD_CFG_H_ */

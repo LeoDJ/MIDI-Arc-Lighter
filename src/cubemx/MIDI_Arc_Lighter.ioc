@@ -1,9 +1,10 @@
 #MicroXplorer Configuration settings - do not modify
-FATFS.IPParameters=_USE_LABEL,_MAX_SS,_MIN_SS,_FS_TINY
+FATFS.IPParameters=_USE_LABEL,_MAX_SS,_MIN_SS,_FS_TINY,_USE_LFN
 FATFS._FS_TINY=1
 FATFS._MAX_SS=4096
 FATFS._MIN_SS=4096
 FATFS._USE_LABEL=1
+FATFS._USE_LFN=0
 File.Version=6
 GPIO.groupedBy=Group By Peripherals
 KeepUserPlacement=false
@@ -185,7 +186,7 @@ ProjectManager.StackSize=0x400
 ProjectManager.TargetToolchain=Makefile
 ProjectManager.ToolChainLocation=
 ProjectManager.UnderRoot=false
-ProjectManager.functionlistsort=1-MX_GPIO_Init-GPIO-false-HAL-true,2-SystemClock_Config-RCC-false-HAL-false,3-MX_ADC_Init-ADC-false-HAL-true,4-MX_TIM1_Init-TIM1-false-HAL-true,5-MX_USB_DEVICE_Init-USB_DEVICE-false-HAL-false,6-MX_TIM14_Init-TIM14-false-HAL-true,7-MX_TIM15_Init-TIM15-false-HAL-true,8-MX_USART1_UART_Init-USART1-false-HAL-true,9-MX_TIM16_Init-TIM16-false-HAL-true,10-MX_TIM17_Init-TIM17-false-HAL-true,11-MX_SPI1_Init-SPI1-false-HAL-true
+ProjectManager.functionlistsort=1-MX_GPIO_Init-GPIO-false-HAL-true,2-SystemClock_Config-RCC-false-HAL-false,3-MX_ADC_Init-ADC-false-HAL-true,4-MX_TIM1_Init-TIM1-false-HAL-true,5-MX_USB_DEVICE_Init-USB_DEVICE-false-HAL-false,6-MX_TIM14_Init-TIM14-false-HAL-true,7-MX_TIM15_Init-TIM15-false-HAL-true,8-MX_USART1_UART_Init-USART1-false-HAL-true,9-MX_TIM16_Init-TIM16-false-HAL-true,10-MX_TIM17_Init-TIM17-false-HAL-true,11-MX_SPI1_Init-SPI1-false-HAL-true,12-MX_FATFS_Init-FATFS-false-HAL-false
 RCC.AHBFreq_Value=48000000
 RCC.APB1Freq_Value=48000000
 RCC.APB1TimFreq_Value=48000000

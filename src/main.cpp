@@ -66,6 +66,7 @@ int main(void) {
     flashInit();
 
     flashLs("");
+    flashPrintFile("/HELLOW~1.TXT");
 
     // toneOutputWrite(0, 20);
     // toneOutputWrite(1, 20);

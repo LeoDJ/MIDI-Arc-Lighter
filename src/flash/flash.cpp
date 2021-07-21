@@ -64,7 +64,10 @@ FRESULT scanFiles(char* path) {
                 path[pathLen] = 0;                      // clear slash to restore path
             }
             else {
-                printf("%s/%s\n", path, fInfo.fname);
+                FatFsDate_t date = {.raw = fInfo.fdate};
+                FatFsTime_t time = {.raw = fInfo.ftime};
+                printf("%d-%02d-%02d %02d:%02d:%02d  %8ld  %s/%s\n", (uint16_t)date.year + 1980, date.month, date.day, time.hour, time.minute, time.second2 * 2, fInfo.fsize, path, fInfo.fname);
+
             }
         }
     }
@@ -79,4 +82,29 @@ void flashLs(char *path) {
     char pathBuf[256];
     strcpy(pathBuf, path);
     scanFiles(pathBuf);
+}
+
+void flashPrintFile(char *path) {
+    FIL file;
+    FRESULT res = f_open(&file, path, FA_READ);
+    if (res == FR_OK) {
+        const uint16_t chunkSize = 64;
+        char buf[chunkSize];
+        unsigned int numRead = chunkSize;
+        do {
+            res = f_read(&file, buf, chunkSize, &numRead);
+            if (res == FR_OK) {
+                fwrite(buf, 1, numRead, stdout);
+            }
+            else {
+                printf("File read failed. Err %d\n", res);
+                break;
+            }
+        } while (numRead == chunkSize);
+        printf("\n");
+    }
+    else {
+        printf("Coudln't open file. Err %d\n", res);
+    }
+    f_close(&file);
 }

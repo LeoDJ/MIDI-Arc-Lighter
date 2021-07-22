@@ -19,6 +19,7 @@
 #include "usbd_midi_if.h"
 #include "midiHandler.h"
 #include "flash.h"
+#include "midiFile.h"
 
 
 extern "C" {
@@ -67,6 +68,9 @@ int main(void) {
 
     flashLs("");
     flashPrintFile("/HELLOW~1.TXT");
+
+    MidiFile mf;
+    mf.openFile("asdf");
 
     // toneOutputWrite(0, 20);
     // toneOutputWrite(1, 20);

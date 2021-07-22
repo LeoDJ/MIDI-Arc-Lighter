@@ -1,5 +1,24 @@
 #include "midiFile.h"
-#include "string.h"
+#include <string.h>
+#include <stdio.h>
+
+int MidiFile::openFile(const char* path) {
+    FRESULT res = f_open(_midiFile, path, FA_READ);
+    if (res != FR_OK) {
+        return res;
+    }
+
+    // parse header and save meta information
+    int parseRes = parseHeader();
+    if (parseRes < 0) {
+        printf("[MIDI] Header parsing failed\n");
+    }
+}
+
+int MidiFile::closeFile() {
+    FRESULT res = f_close(_midiFile);
+    return res;
+}
 
 midiChunk_t MidiFile::readChunkHeader() {
     midiChunk_t chunk;
@@ -65,11 +84,12 @@ int MidiFile::parseHeader() {
             // error during parsing of tracks
             return -1;
         }
-        tracks[i].filePos = _midiFile->fptr;    // save beginning offset of track segment
+        tracks[i].startFilePos = _midiFile->fptr;    // save beginning offset of track segment
+        tracks[i].curFilePos = tracks[i].startFilePos;
         tracks[i].length = trackChunkHeader.length;
 
         // calculate offset to next chunk and seek to that
-        uint32_t nextChunk = tracks[i].filePos + tracks[i].length;  
+        uint32_t nextChunk = tracks[i].startFilePos + tracks[i].length;  
         res = f_lseek(_midiFile, nextChunk);
         if (res != FR_OK) {
             // seeking to next chunk failed
@@ -78,20 +98,8 @@ int MidiFile::parseHeader() {
     }
 
     return 0;
-
 }
 
-int MidiFile::openFile(const char* path) {
-    FRESULT res = f_open(_midiFile, path, FA_READ);
-    if (res != FR_OK) {
-        return res;
-    }
+int MidiFile::parseNextEvent() {
 
-    // parse header and save meta information
-    parseHeader();
-}
-
-int MidiFile::closeFile() {
-    FRESULT res = f_close(_midiFile);
-    return res;
 }

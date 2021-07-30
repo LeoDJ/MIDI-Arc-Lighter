@@ -51,7 +51,7 @@ int main(void) {
     MX_TIM15_Init();
     MX_TIM16_Init();
     MX_TIM17_Init();
-    MX_USART1_UART_Init();
+    MX_USART4_UART_Init();
     MX_SPI1_Init();
     MX_FATFS_Init();
     
@@ -123,8 +123,7 @@ void SystemClock_Config(void) {
     if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK) {
         Error_Handler();
     }
-    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB|RCC_PERIPHCLK_USART1;
-    PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK1;
+    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
     PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
 
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) {

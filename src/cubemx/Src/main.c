@@ -97,11 +97,11 @@ int main(void)
   MX_USB_DEVICE_Init();
   MX_TIM14_Init();
   MX_TIM15_Init();
-  MX_USART1_UART_Init();
   MX_TIM16_Init();
   MX_TIM17_Init();
   MX_SPI1_Init();
   MX_FATFS_Init();
+  MX_USART4_UART_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -150,8 +150,7 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB|RCC_PERIPHCLK_USART1;
-  PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK1;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
   PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
 
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)

@@ -114,7 +114,7 @@ void midiHandlerPitchBend(uint8_t ch, uint16_t bendVal) {
     // printf("(%8ld) [MIDI] PitchBend: %5d\n", HAL_GetTick(), bendVal);
     pitchBend = bendVal;    // update global variable
     // pitch bend all currently plaing notes
-    uint8_t numNotesPlaying = getCurNoteNumPlaying();
+    // uint8_t numNotesPlaying = getCurNoteNumPlaying();
     for (int i = 0; i < NUM_CONCURRENT_NOTES; i++) {
         curNote_t *note = &curNotePlaying[i];
         if (note->note != -1) {

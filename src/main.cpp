@@ -51,7 +51,7 @@ int main(void) {
     MX_TIM15_Init();
     MX_TIM16_Init();
     MX_TIM17_Init();
-    MX_USART4_UART_Init();
+    MX_USART2_UART_Init();
     MX_SPI1_Init();
     MX_FATFS_Init();
     
@@ -71,9 +71,6 @@ int main(void) {
 
     MidiFile mf;
     mf.openFile("asdf");
-
-    // toneOutputWrite(0, 20);
-    // toneOutputWrite(1, 20);
 
     while (1) {
         midiLoop();     // parse midi messages and call handler callbacks
@@ -141,7 +138,7 @@ void Error_Handler(void) {
      */
     while(1) {
         HAL_Delay(50);
-        HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+        // HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
     }
 
     /* USER CODE END Error_Handler_Debug */

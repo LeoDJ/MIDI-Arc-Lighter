@@ -14,7 +14,7 @@
 #define ARPEGGIO_FREQ           30      // Hz
 
 
-#define PRINTF_UART             huart4
+#define PRINTF_UART             huart2
 
 // generated defines
 #define PWM_PRESC   ((F_CPU / PWM_FREQ / 2) - 1) // /2 because of center alignment

@@ -32,7 +32,7 @@ class MidiFile {
     midiChunk_t readChunkHeader();
     int parseNextEvent();
 
-    FIL *_midiFile;
+    FIL _midiFile;
     uint16_t _numTracks;
     uint32_t _usPerTick;
     uint32_t _usPerQuarter = 500000; // default 120 BPM

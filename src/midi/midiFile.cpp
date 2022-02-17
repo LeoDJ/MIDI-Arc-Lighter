@@ -2,21 +2,30 @@
 #include <string.h>
 #include <stdio.h>
 
+
 int MidiFile::openFile(const char* path) {
-    FRESULT res = f_open(_midiFile, path, FA_READ);
+    // printf("[MIDIF] Opening file %s\n", path);
+    FRESULT res = f_open(&_midiFile, path, FA_READ);
     if (res != FR_OK) {
+        printf("[MIDIF] File open failed.\n");
         return res;
     }
 
     // parse header and save meta information
     int parseRes = parseHeader();
     if (parseRes < 0) {
-        printf("[MIDI] Header parsing failed\n");
+        printf("[MIDIF] Header parsing failed.\n");
     }
+
+    // printf("[MIDIF] Header parsing successful. tracks: %d, usPerTick: %d\n", _numTracks, _usPerTick);
+    // for (int i = 0; i < _numTracks; i++) {
+    //     midiTrack_t t = tracks[i];
+    //     printf("[MIDIF] Track %d: start: %d, length: %d, curFilePos: %d\n", i, t.startFilePos, t.length, t.curFilePos);
+    // }
 }
 
 int MidiFile::closeFile() {
-    FRESULT res = f_close(_midiFile);
+    FRESULT res = f_close(&_midiFile);
     return res;
 }
 
@@ -25,7 +34,7 @@ midiChunk_t MidiFile::readChunkHeader() {
     unsigned int readBytes;
 
     // read header chunk information
-    FRESULT res = f_read(_midiFile, &chunk, sizeof(midiChunk_t), &readBytes);
+    FRESULT res = f_read(&_midiFile, &chunk, sizeof(midiChunk_t), &readBytes);
     if (res != FR_OK || readBytes != sizeof(midiChunk_t)) {
         chunk.length = 0;   // signal, that reading the chunk header failed
     }
@@ -50,7 +59,7 @@ int MidiFile::parseHeader() {
 
     // read header
     uint8_t midiHeaderBuf[(uint16_t)headerChunk.length];
-    res = f_read(_midiFile, &midiHeaderBuf, headerChunk.length, &readBytes);
+    res = f_read(&_midiFile, &midiHeaderBuf, headerChunk.length, &readBytes);
     if (res != FR_OK || readBytes != headerChunk.length) {
         // read failed
         return -1;
@@ -84,13 +93,13 @@ int MidiFile::parseHeader() {
             // error during parsing of tracks
             return -1;
         }
-        tracks[i].startFilePos = _midiFile->fptr;    // save beginning offset of track segment
+        tracks[i].startFilePos = _midiFile.fptr;    // save beginning offset of track segment
         tracks[i].curFilePos = tracks[i].startFilePos;
         tracks[i].length = trackChunkHeader.length;
 
         // calculate offset to next chunk and seek to that
         uint32_t nextChunk = tracks[i].startFilePos + tracks[i].length;  
-        res = f_lseek(_midiFile, nextChunk);
+        res = f_lseek(&_midiFile, nextChunk);
         if (res != FR_OK) {
             // seeking to next chunk failed
             return -1;

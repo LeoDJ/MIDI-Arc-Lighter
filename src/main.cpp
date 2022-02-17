@@ -70,11 +70,27 @@ int main(void) {
     flashPrintFile("/HELLOW~1.TXT");
 
     MidiFile mf;
-    mf.openFile("asdf");
+    mf.openFile("/_HE'SA~1.MID");
+
+    // bool tonePlaying = false;
 
     while (1) {
         midiLoop();     // parse midi messages and call handler callbacks
         midiHandlerArpLoop();
+
+        // dumb test code, turn on arc at 440Hz on button press
+        // if (HAL_GPIO_ReadPin(BUTTON_GPIO_Port, BUTTON_Pin)) {
+        //     if (!tonePlaying) {
+        //         tonePlaying = true;
+        //         toneOutputWrite(0, 440);
+        //         toneOutputWrite(1, 523);
+        //     }
+        // }
+        // else {
+        //     tonePlaying = false;
+        //     toneOutputWrite(0, 0);
+        //     toneOutputWrite(1, 0);
+        // }
 
 
         // HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
@@ -138,7 +154,7 @@ void Error_Handler(void) {
      */
     while(1) {
         HAL_Delay(50);
-        // HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+        HAL_GPIO_TogglePin(LED_1_R_GPIO_Port, LED_1_R_Pin);
     }
 
     /* USER CODE END Error_Handler_Debug */

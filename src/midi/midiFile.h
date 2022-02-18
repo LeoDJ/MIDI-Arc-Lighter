@@ -17,9 +17,9 @@ typedef struct {
 } midiHeader_t;
 
 typedef struct {
-    uint32_t startFilePos;
-    uint32_t length;
-    uint32_t curFilePos;
+    uint32_t startFilePos;  // offset in file
+    uint32_t length;        // length of track
+    uint32_t curFilePos;    // current position in file
 } midiTrack_t;
 
 class MidiFile {
@@ -31,6 +31,7 @@ class MidiFile {
     int parseHeader();
     midiChunk_t readChunkHeader();
     int parseNextEvent();
+    uint32_t readVarLen();
 
     FIL _midiFile;
     uint16_t _numTracks;

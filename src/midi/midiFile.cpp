@@ -17,6 +17,8 @@ int MidiFile::openFile(const char* path) {
         printf("[MIDIF] Header parsing failed.\n");
     }
 
+    return parseRes;
+
     // printf("[MIDIF] Header parsing successful. tracks: %d, usPerTick: %d\n", _numTracks, _usPerTick);
     // for (int i = 0; i < _numTracks; i++) {
     //     midiTrack_t t = tracks[i];
@@ -71,11 +73,14 @@ int MidiFile::parseHeader() {
         return -1;
     }
 
-    if (midiHeader->tracks > MAX_MIDI_TRACKS) {
-        // too many MIDI tracks in file
-        return -1;
-    }
+    // if (midiHeader->tracks > MAX_MIDI_TRACKS) {
+    //     // too many MIDI tracks in file
+    //     return -1;
+    // }
     _numTracks = midiHeader->tracks;
+    if (_numTracks > MAX_MIDI_TRACKS) { // limit track number
+        _numTracks = MAX_MIDI_TRACKS;
+    }
 
     if ((midiHeader->division & 0x8000) == 1) {
         // SMTPE frame timing not supported (yet)
@@ -107,6 +112,25 @@ int MidiFile::parseHeader() {
     }
 
     return 0;
+}
+
+// read variable-length quantity
+uint32_t MidiFile::readVarLen() {
+    uint32_t returnVal = 0;
+    uint8_t val;
+    UINT readBytes;
+    for (int i = 0; i < 4; i++) {
+        f_read(&_midiFile, &val, 1, &readBytes);
+
+        returnVal <<= 7;
+        returnVal |= val & 0x7F;
+        
+        // upper bit not set indicates end of var len quantity
+        if (!(val & 0x80)) {
+            return returnVal;
+        }
+    }
+    return returnVal | 0x80000000;  // set upper bit to indicate parsing error
 }
 
 int MidiFile::parseNextEvent() {

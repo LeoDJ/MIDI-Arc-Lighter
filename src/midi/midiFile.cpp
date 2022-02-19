@@ -114,17 +114,23 @@ int MidiFile::parseHeader() {
     return 0;
 }
 
+// read single byte from file
+// TODO: optimize read accesses by reading more bytes at once and seek back?
+uint8_t MidiFile::readByte() {
+    uint8_t val;
+    UINT readBytes;
+    f_read(&_midiFile, &val, 1, &readBytes);    // TODO: error handling?
+    return val;
+}
+
 // read variable-length quantity
 uint32_t MidiFile::readVarLen() {
     uint32_t returnVal = 0;
-    uint8_t val;
-    UINT readBytes;
     for (int i = 0; i < 4; i++) {
-        f_read(&_midiFile, &val, 1, &readBytes);
-
+        uint8_t val = readByte();
         returnVal <<= 7;
         returnVal |= val & 0x7F;
-        
+
         // upper bit not set indicates end of var len quantity
         if (!(val & 0x80)) {
             return returnVal;
@@ -133,6 +139,26 @@ uint32_t MidiFile::readVarLen() {
     return returnVal | 0x80000000;  // set upper bit to indicate parsing error
 }
 
-int MidiFile::parseNextEvent() {
+int MidiFile::getNextEvent() {
+    // read delta time
+    uint32_t deltaT = readVarLen();
+    parseEvent();
+}
 
+int MidiFile::parseEvent() {
+    uint8_t cmd = readByte();
+    switch (cmd) {
+        case 0x00 ... 0x7F: // running status
+            break;
+        case 0x80 ... 0xBF: // 2 parameters
+        case 0xE0 ... 0xEF:
+            break;
+        case 0xC0 ... 0xDF: // 1 parameter
+            break;
+        case 0xF0:  // SysEx Event
+        case 0xF7:
+            break;
+        case 0xFF:  // Meta Event
+            break;
+    }
 }

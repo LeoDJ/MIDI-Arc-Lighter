@@ -10,12 +10,14 @@ typedef struct {
     uint8_t data[];
 } midiChunk_t;
 
+#define MIDI_CHUNK_TYPE_HEADER  "MThd"
 typedef struct {
     be_uint16_t format;
     be_uint16_t tracks;
     be_uint16_t division;
 } midiHeader_t;
 
+#define MIDI_CHUNK_TYPE_TRACK   "MTrk"
 typedef struct {
     uint32_t startFilePos;  // offset in file
     uint32_t length;        // length of track
@@ -26,12 +28,14 @@ class MidiFile {
     public:
     int openFile(const char* path);
     int closeFile();
+    int getNextEvent();
 
     private:
     int parseHeader();
     midiChunk_t readChunkHeader();
-    int parseNextEvent();
+    int parseEvent();
     uint32_t readVarLen();
+    uint8_t readByte();
 
     FIL _midiFile;
     uint16_t _numTracks;
@@ -40,6 +44,4 @@ class MidiFile {
     midiTrack_t tracks[MAX_MIDI_TRACKS];
 };
 
-#define MIDI_CHUNK_TYPE_HEADER  "MThd"
-#define MIDI_CHUNK_TYPE_TRACK   "MTrk"
 

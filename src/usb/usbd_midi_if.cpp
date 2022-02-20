@@ -56,7 +56,7 @@ static uint16_t midiTx(uint8_t *msg, uint16_t length) {
 }
 
 void midiLoop() {
-    if (ringbuf_bytes_used(ringBuf) >= 4) {
+    while (ringbuf_bytes_used(ringBuf) >= 4) {
         usbMidiEvent_t event;
         // disable interrupts during ringbuffer read, else a USB interrupt could mess with the head and tail pointers
         NVIC_DisableIRQ(USB_IRQn);

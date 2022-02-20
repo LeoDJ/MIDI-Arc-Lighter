@@ -70,13 +70,17 @@ int main(void) {
     flashPrintFile("/HELLOW~1.TXT");
 
     MidiFile mf;
-    mf.openFile("/_HE'SA~1.MID");
+    // mf.openFile("/_HE'SA~1.MID");
+    mf.openFile("/GRAVIT~2.MID");
 
     // bool tonePlaying = false;
+
+    HAL_Delay(2000);
 
     while (1) {
         midiLoop();     // parse midi messages and call handler callbacks
         midiHandlerArpLoop();
+        mf.process();
 
         // dumb test code, turn on arc at 440Hz on button press
         // if (HAL_GPIO_ReadPin(BUTTON_GPIO_Port, BUTTON_Pin)) {
@@ -153,8 +157,8 @@ void Error_Handler(void) {
     /* User can add his own implementation to report the HAL error return state
      */
     while(1) {
-        HAL_Delay(50);
-        HAL_GPIO_TogglePin(LED_1_R_GPIO_Port, LED_1_R_Pin);
+        // HAL_Delay(50);
+        // HAL_GPIO_TogglePin(LED_1_R_GPIO_Port, LED_1_R_Pin);
     }
 
     /* USER CODE END Error_Handler_Debug */

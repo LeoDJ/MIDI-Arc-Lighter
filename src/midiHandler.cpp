@@ -17,6 +17,9 @@ uint32_t lastArpSwitch = 0;
 uint8_t arpCounter = 0;
 uint8_t prevNumNotesPlaying = 0;
 
+// function delcarations
+void midiHandlerNoteOff(uint8_t ch, uint8_t note, uint8_t vel);
+
 static int getCurNoteIdx(uint8_t note) {
     for (int i = 0; i < NUM_CONCURRENT_NOTES; i++) {
         if (curNotePlaying[i].note == note) {
@@ -83,6 +86,12 @@ static float calculateFrequency(uint8_t noteNum) {
 }
 
 void midiHandlerNoteOn(uint8_t ch, uint8_t note, uint8_t vel) {
+    // By definition, a note-on message with vv=0 is equivalent to the message: "note-off vv=40"
+    if (vel == 0) {
+        midiHandlerNoteOff(ch, note, 0x40);
+        return;
+    }
+
     int idx = getFreeCurNoteIdx();
     printf("(%8ld) [MIDI] On:  %3d, Slot: %2d, Midi Ch: %2d", HAL_GetTick(), note, idx, ch);
     if (idx != -1) {

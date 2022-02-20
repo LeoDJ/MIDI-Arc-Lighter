@@ -9,7 +9,10 @@ void flashInit() {
         // printf("SFUD init success!\n");
         flash = sfud_get_device_table() + 0;
     }
-    f_mount(&USERFatFS, "", 0);
+    FRESULT res = f_mount(&USERFatFS, "", 0);
+    if (res != FR_OK) {
+        printf("[FLASH] FS mount status: %d\n", res);
+    }
 }
 
 sfud_err flashRead(uint32_t addr, size_t size, uint8_t *data) {

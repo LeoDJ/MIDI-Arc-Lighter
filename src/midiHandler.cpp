@@ -17,8 +17,6 @@ uint32_t lastArpSwitch = 0;
 uint8_t arpCounter = 0;
 uint8_t prevNumNotesPlaying = 0;
 
-// function delcarations
-void midiHandlerNoteOff(uint8_t ch, uint8_t note, uint8_t vel);
 
 static int getCurNoteIdx(uint8_t note) {
     for (int i = 0; i < NUM_CONCURRENT_NOTES; i++) {

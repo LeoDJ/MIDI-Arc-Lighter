@@ -1,4 +1,5 @@
 #include "midiFile.h"
+#include "midiHandler.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,23 +34,104 @@ int MidiFile::closeFile() {
     return res;
 }
 
-void MidiFile::process() {
-    for (int i = 0; i < _numTracks; i++) {
-        midiTrackEvent_t evt = trackParser[i]->getNextEvent();
-        if (evt.statusByte) {
-            printf("(%8ld) [MIDIF] Track %d parse - dt: %5ld, status: %02X\n", HAL_GetTick(), i, evt.deltaT, evt.statusByte);
+void MidiFile::play() {
+    _lastTempoChangeTime = HAL_GetTick();
+    _curPlaying = true;
+}
+void MidiFile::pause() {
+    // _lastTempoChangeTime = HAL_GetTick(); // TODO: time calculation
+    _curPlaying = false;
+}
+
+void MidiFile::handleEvent(midiTrackEvent_t evt) {
+    switch (evt.command) {
+        case 0:         // invalid event or end of track
+            break;
+        case 0x8: {    // Note Off
+            midiHandlerNoteOff(evt.channel, evt.param1, evt.param2);
+            printf("(%8ld) [MIDIF] Event: NoteOff %d, %02X, %02X\n", HAL_GetTick(), evt.channel, evt.param1, evt.param2);
+            break;
         }
-        if (evt.buf != NULL) {
-            free(evt.buf);
+        case 0x9: {    // Note On
+            midiHandlerNoteOn(evt.channel, evt.param1, evt.param2);
+            printf("(%8ld) [MIDIF] Event: NoteOn  %d, %02X, %02X\n", HAL_GetTick(), evt.channel, evt.param1, evt.param2);
+            break;
+        }
+        case 0xB: {    // Control Change
+            midiHandlerCtrlChange(evt.channel, evt.param1, evt.param2);
+            printf("(%8ld) [MIDIF] Event: CtrlChg %d, %02X, %02X\n", HAL_GetTick(), evt.channel, evt.param1, evt.param2);
+            break;
+        }
+        case 0xE: {    // Pitch Bend
+            midiHandlerPitchBend(evt.channel, evt.param2 << 7 | evt.param1);
+            printf("(%8ld) [MIDIF] Event: PitchBd %d, %5d\n", HAL_GetTick(), evt.channel, evt.param2 << 7 | evt.param1);
+            break;
+        }
+        case 0xF: {    // SysEx or Meta
+            switch (evt.statusByte) {
+                case 0xFF: {                // Meta Event
+                    switch (evt.metaType) { // Meta Event Type
+                        case 0x20: {
+                            printf("(%8ld) [MIDIF] Error! Unhandled MIDI Channel Prefix Meta Event\n", HAL_GetTick());
+                            break;
+                        }
+                        case 0x51: {        // Set Tempo
+                            if (evt.length == 3) {
+                                _usPerQuarter = evt.buf[0] << 16 | evt.buf[1] << 8 | evt.buf[2];
+                                printf("(%8ld) [MIDIF] Event: SetTemp %6d (%02X %02X %02X)\n", HAL_GetTick(), _usPerQuarter, evt.buf[0], evt.buf[1], evt.buf[2]);
+                                calcTickTime();
+                            }    
+                            break;
+                        }
+                        case 0x2F: {        // End Of Track
+                            _finishedTracks++;
+                            printf("(%8ld) [MIDIF] Event: EOTrack, sum: %d\n", HAL_GetTick(), _finishedTracks);
+                            if (_finishedTracks >= _numTracks) {
+                                _curPlaying = false;
+                            }
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+            break;
+        }
+    }
+
+
+    if (evt.buf != NULL) {
+        free(evt.buf);
+        evt.buf = NULL;
+    }
+}
+
+void MidiFile::process() {
+    if (_curPlaying) {
+        _curMidiTick = _lastTempoChangeTick + ((uint64_t)(HAL_GetTick() - _lastTempoChangeTime) * 1000 / _usPerTick);
+
+        for (int i = 0; i < _numTracks; i++) {
+            uint32_t nextTrackMidiTick = _trackStatus[i].curMidiTick + _trackStatus[i].evt.deltaT;
+            if (_curMidiTick >= nextTrackMidiTick && _trackStatus[i].evt.statusByte != 0) {
+                handleEvent(_trackStatus[i].evt);
+                printf("Finished parsing Event\n");
+                _trackStatus[i].evt = _trackParser[i]->getNextEvent();  // fetch upcoming event
+                printf("(%8ld) [MIDIF] Track %d cache event - dt: %5ld, status: %02X, curTick: %d, nextTick: %d\n", HAL_GetTick(), i, _trackStatus[i].evt.deltaT, _trackStatus[i].evt.statusByte, _curMidiTick, nextTrackMidiTick);
+                _trackStatus[i].curMidiTick = nextTrackMidiTick;
+            }
         }
     }
 }
 
 void MidiFile::clearTrackParsers() {
     for (int i = 0; i < MAX_MIDI_TRACKS; i++) {
-        if (trackParser[i] != NULL) {
-            delete trackParser[i];
-            trackParser[i] = NULL;
+        if (_trackParser[i] != NULL) {
+            if (_trackStatus[i].evt.buf != NULL) {
+                free(_trackStatus[i].evt.buf);
+                _trackStatus[i].evt.buf = NULL;
+            }
+            delete _trackParser[i];
+            _trackParser[i] = NULL;
         }
     }
 }
@@ -65,6 +147,13 @@ midiChunk_t MidiFile::readChunkHeader() {
     }
 
     return chunk;
+}
+
+void MidiFile::calcTickTime() {
+    // _lastTempoChangeTime = HAL_GetTick();
+    _lastTempoChangeTime += ((_curMidiTick - _lastTempoChangeTick) * _usPerTick) / 1000;
+    _lastTempoChangeTick = _curMidiTick;
+    _usPerTick = _usPerQuarter / _ticksPerQuarterNote;
 }
 
 int MidiFile::parseHeader() {
@@ -99,12 +188,9 @@ int MidiFile::parseHeader() {
         return -1;
     }
 
-    // if (midiHeader->tracks > MAX_MIDI_TRACKS) {
-    //     // too many MIDI tracks in file
-    //     return -1;
-    // }
     _numTracks = midiHeader->tracks;
     if (_numTracks > MAX_MIDI_TRACKS) { // limit track number
+        printf("(%8ld) [MIDIF] Warning! Too many channels (%d), limited to %d.\n", HAL_GetTick(), _numTracks, MAX_MIDI_TRACKS);
         _numTracks = MAX_MIDI_TRACKS;
     }
 
@@ -114,7 +200,8 @@ int MidiFile::parseHeader() {
         return -1;
     }
     else { // pulses per quarter note
-        _usPerTick = midiHeader->division;
+        _ticksPerQuarterNote = midiHeader->division;
+        calcTickTime();
     }
 
     // find tracks
@@ -127,14 +214,12 @@ int MidiFile::parseHeader() {
             closeFile();
             return -1;
         }
-        // tracks[i].startFilePos = _midiFile.fptr;    // save beginning offset of track segment
-        // tracks[i].curFilePos = tracks[i].startFilePos;
-        // tracks[i].length = trackChunkHeader.length;
         uint32_t startFilePos = _midiFile.fptr;    // read beginning offset of track segment
         uint32_t length = trackChunkHeader.length;
         printf("[MIDIF] Init track parser %d, start: %ld, len: %ld\n", i, startFilePos, length);
         fflush(stdout);
-        trackParser[i] = new MidiFile_TrackParser(&_midiFile, startFilePos, length);
+        _trackParser[i] = new MidiFile_TrackParser(&_midiFile, startFilePos, length);
+        _trackStatus[i].evt = _trackParser[i]->getNextEvent();  // get initial event
 
         // calculate offset to next chunk and seek to that
         uint32_t nextChunk = startFilePos + length;  

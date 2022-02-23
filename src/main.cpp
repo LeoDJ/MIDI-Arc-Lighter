@@ -72,10 +72,13 @@ int main(void) {
     MidiFile mf;
     // mf.openFile("/_HE'SA~1.MID");
     mf.openFile("/GRAVIT~2.MID");
+    // mf.openFile("/FLIGHT~1.MID");
+    // mf.openFile("/_TETRIS.MID");
 
     // bool tonePlaying = false;
 
     HAL_Delay(2000);
+    mf.play();
 
     while (1) {
         midiLoop();     // parse midi messages and call handler callbacks

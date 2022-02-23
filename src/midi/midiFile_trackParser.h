@@ -1,9 +1,16 @@
 #include <stdint.h>
 #include "fatfs.h"
 
+#pragma pack(push, 1)
 typedef struct {
     uint32_t deltaT;
-    uint8_t statusByte;
+    union {
+        struct {
+            uint8_t channel : 4;
+            uint8_t command : 4;
+        };
+        uint8_t statusByte;
+    };
     union {
         struct {
             uint8_t param1;
@@ -11,16 +18,17 @@ typedef struct {
         };
         struct {
             uint8_t metaType;   // optional
-            uint8_t *buf;
             uint32_t length;
+            uint8_t *buf;       // has to be at end of union so it doesn't collide with param1/2 and messes with NULL checks
         };
     };
 } midiTrackEvent_t;
+#pragma pack(pop)
 
 class MidiFile_TrackParser {
     public:
     MidiFile_TrackParser(FIL *midiFile, uint32_t startPos, uint32_t len);
-    midiTrackEvent_t getNextEvent();
+    midiTrackEvent_t getNextEvent();    // don't forget to free evt.buf if exists!
 
     private:
     midiTrackEvent_t parseEvent();

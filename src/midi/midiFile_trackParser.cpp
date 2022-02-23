@@ -35,8 +35,8 @@ uint32_t MidiFile_TrackParser::readVarLen() {
 }
 
 midiTrackEvent_t MidiFile_TrackParser::getNextEvent() {
-    midiTrackEvent_t evt = {0};
     if (_curFilePos >= _startFilePos + _length) {
+        midiTrackEvent_t evt = {0};
         evt.statusByte = 0; // indicate end of file by zero status byte
         return evt;
     }
@@ -45,7 +45,7 @@ midiTrackEvent_t MidiFile_TrackParser::getNextEvent() {
 
     // read delta time
     uint32_t deltaT = readVarLen();
-    evt = parseEvent();
+    midiTrackEvent_t evt = parseEvent();
     evt.deltaT = deltaT;
 
     _curFilePos = _midiFile->fptr;      // save file position
@@ -59,7 +59,7 @@ void printBuf(uint8_t *buf, size_t len) {
 }
 
 midiTrackEvent_t MidiFile_TrackParser::parseEvent() {
-    midiTrackEvent_t evt;
+    midiTrackEvent_t evt = {0};
     uint8_t nextByte = readByte();
 
     bool runningStatus = !(nextByte & 0x80);    // upper bit is 0 for running status message
@@ -67,7 +67,8 @@ midiTrackEvent_t MidiFile_TrackParser::parseEvent() {
     _prevStatusByte = evt.statusByte;
 
     uint8_t param1 = 0;
-    // don't read param1 for sysex events because the read is handled by the readVarLen function
+    // don't read param1 for SysEx events because the read is handled by the readVarLen function
+    // assumes SysEx events never use running status
     if (evt.statusByte != 0xF0 && evt.statusByte != 0xF7) {
         param1 = runningStatus ? nextByte : readByte();    
     }

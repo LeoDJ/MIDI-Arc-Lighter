@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "fatfs.h"
+#include "flash.h"
 
 #pragma pack(push, 1)
 typedef struct {
@@ -16,7 +16,7 @@ typedef struct {
             uint8_t param1;
             uint8_t param2;
         };
-        struct {
+        struct {    // only applicable for SysEx and meta events
             uint8_t metaType;   // optional
             uint32_t length;
             uint8_t *buf;       // has to be at end of union so it doesn't collide with param1/2 and messes with NULL checks

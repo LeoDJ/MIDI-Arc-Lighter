@@ -141,7 +141,7 @@ midiChunk_t MidiFile::readChunkHeader() {
     unsigned int readBytes;
 
     // read header chunk information
-    FRESULT res = f_read(&_midiFile, &chunk, sizeof(midiChunk_t), &readBytes);
+    FRESULT res = f_read_retry(&_midiFile, &chunk, sizeof(midiChunk_t), &readBytes);
     if (res != FR_OK || readBytes != sizeof(midiChunk_t)) {
         chunk.length = 0;   // signal, that reading the chunk header failed
     }
@@ -174,7 +174,7 @@ int MidiFile::parseHeader() {
 
     // read header
     uint8_t midiHeaderBuf[(uint16_t)headerChunk.length];
-    res = f_read(&_midiFile, &midiHeaderBuf, headerChunk.length, &readBytes);
+    res = f_read_retry(&_midiFile, &midiHeaderBuf, headerChunk.length, &readBytes);
     if (res != FR_OK || readBytes != headerChunk.length) {
         // read failed
         closeFile();
@@ -223,7 +223,7 @@ int MidiFile::parseHeader() {
 
         // calculate offset to next chunk and seek to that
         uint32_t nextChunk = startFilePos + length;  
-        res = f_lseek(&_midiFile, nextChunk);
+        res = f_lseek_retry(&_midiFile, nextChunk);
         if (res != FR_OK) {
             // seeking to next chunk failed
             closeFile();

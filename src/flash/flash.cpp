@@ -1,8 +1,9 @@
 #include "flash.h"
-#include "fatfs.h"
 #include <string.h>
+#include "util.h"
 
 const sfud_flash *flash;
+volatile bool flashBusy = false;
 
 void flashInit() {
     if (sfud_init() == SFUD_SUCCESS) {
@@ -30,15 +31,32 @@ sfud_err flashWrite(uint32_t addr, size_t size, const uint8_t *data) {
 }
 
 sfud_err flashReadBlock(uint32_t blockAddr, uint32_t blockLen, uint8_t *data) {
-    uint32_t startAddr = blockAddr * flashGetBlockSize();
-    uint32_t len = blockLen * flashGetBlockSize();
-    return flashRead(startAddr, len, data);
+    if (!flashBusy) {
+        flashBusy = true;
+        uint32_t startAddr = blockAddr * flashGetBlockSize();
+        uint32_t len = blockLen * flashGetBlockSize();
+        // printf("[FLASH] Free Heap: %d\n", estimateFreeHeap(16));
+        sfud_err res = flashRead(startAddr, len, data);
+        flashBusy = false;
+        return res;
+    }
+    else {
+        return SFUD_ERR_READ;
+    }
 }
 
 sfud_err flashWriteBlock(uint32_t blockAddr, uint32_t blockLen, const uint8_t *data) {
-    uint32_t startAddr = blockAddr * flashGetBlockSize();
-    uint32_t len = blockLen * flashGetBlockSize();
-    return flashWrite(startAddr, len, data);
+    if (!flashBusy) {
+        flashBusy = true;
+        uint32_t startAddr = blockAddr * flashGetBlockSize();
+        uint32_t len = blockLen * flashGetBlockSize();
+        sfud_err res = flashWrite(startAddr, len, data);
+        flashBusy = false;
+        return res;
+    }
+    else {
+        return SFUD_ERR_WRITE;
+    }
 }
 
 uint32_t flashGetBlockSize() {
@@ -110,4 +128,36 @@ void flashPrintFile(char *path) {
         printf("Coudln't open file. Err %d\n", res);
     }
     f_close(&file);
+}
+
+/**
+ *  @param fp Pointer to the file object
+ *  @param ofs File pointer from top of file
+ *  @param timeout Retry timeout in ms
+ */
+FRESULT f_lseek_retry(FIL* fp, DWORD ofs, uint32_t timeout) {
+    uint32_t start = HAL_GetTick();
+    FRESULT res;
+    do {
+        res = f_lseek(fp, ofs);
+        // printf("f_lseek %d\n", res);
+    } while (res == FR_DISK_ERR && HAL_GetTick() - start <= timeout);
+    return res;
+}
+
+/**
+ *  @param fp Pointer to the file object
+ *  @param buff Pointer to data buffer
+ *  @param btr Number of bytes to read
+ *  @param br Pointer to number of bytes read
+ *  @param timeout Retry timeout in ms
+ */
+FRESULT f_read_retry(FIL* fp, void* buff, UINT btr, UINT* br, uint32_t timeout) {
+    uint32_t start = HAL_GetTick();
+    FRESULT res;
+    do {
+        res = f_read(fp, buff, btr, br);
+        // printf("f_read %d\n", res);
+    } while (res == FR_DISK_ERR && HAL_GetTick() - start <= timeout);
+    return res;
 }

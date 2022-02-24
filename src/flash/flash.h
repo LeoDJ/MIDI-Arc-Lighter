@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sfud.h"
+#include "fatfs.h"
 
 void flashInit();
 sfud_err flashRead(uint32_t addr, size_t size, uint8_t *data);
@@ -10,6 +11,9 @@ sfud_err flashWriteBlock(uint32_t blockAddr, uint32_t blockLen, const uint8_t *d
 uint32_t flashGetBlockSize();
 void flashLs(char *path);
 void flashPrintFile(char *path);
+
+FRESULT f_lseek_retry(FIL* fp, DWORD ofs, uint32_t timeout = 1000);
+FRESULT f_read_retry(FIL* fp, void* buff, UINT btr, UINT* br, uint32_t timeout = 1000);
 
 typedef union {
     struct {

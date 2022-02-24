@@ -1,6 +1,7 @@
 #include "midiFile_trackParser.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "util.h"
 
 MidiFile_TrackParser::MidiFile_TrackParser(FIL *midiFile, uint32_t startPos, uint32_t len) {
     _midiFile = midiFile;
@@ -14,7 +15,7 @@ MidiFile_TrackParser::MidiFile_TrackParser(FIL *midiFile, uint32_t startPos, uin
 uint8_t MidiFile_TrackParser::readByte() {
     uint8_t val;
     UINT readBytes;
-    f_read(_midiFile, &val, 1, &readBytes);    // TODO: error handling?
+    f_read_retry(_midiFile, &val, 1, &readBytes);    // TODO: error handling?
     return val;
 }
 
@@ -41,7 +42,7 @@ midiTrackEvent_t MidiFile_TrackParser::getNextEvent() {
         return evt;
     }
 
-    f_lseek(_midiFile, _curFilePos);    // restore file position
+    f_lseek_retry(_midiFile, _curFilePos);    // restore file position
 
     // read delta time
     uint32_t deltaT = readVarLen();
@@ -89,15 +90,16 @@ midiTrackEvent_t MidiFile_TrackParser::parseEvent() {
         case 0xF7: {
             evt.length = readVarLen();
             evt.buf = (uint8_t*)malloc(evt.length);
+            // printf("[MIDIF] Free Heap: %d\n", estimateFreeHeap(16));
             if (evt.buf == NULL) {  // not enough memory
                 // seek file to next event
-                f_lseek(_midiFile, _midiFile->fptr + evt.length);
+                f_lseek_retry(_midiFile, _midiFile->fptr + evt.length);
                 // signal read error with zero length
                 evt.length = 0;
             }
             else {
                 UINT readLen;
-                f_read(_midiFile, evt.buf, evt.length, &readLen);
+                f_read_retry(_midiFile, evt.buf, evt.length, &readLen);
             }
             break;
         }

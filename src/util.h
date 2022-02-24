@@ -1,5 +1,7 @@
 #include <stdint.h>
 
+int estimateFreeHeap(int allocSize);
+
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 #define htons(n) (n)
 #define ntohs(n) (n)

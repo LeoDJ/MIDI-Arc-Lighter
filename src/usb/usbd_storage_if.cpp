@@ -235,10 +235,9 @@ int8_t STORAGE_Read_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t bl
   uint32_t len = blk_len * flashGetBlockSize();
 
   printf("[MSC] READ  blk_addr: %4lu, blk_len: %2u, addr: %8lu, len: %lu\n", blk_addr, blk_len, startAddr, len);
-  // flashRead(startAddr, len, buf);
-  flashReadBlock(blk_addr, blk_len, buf);
+  sfud_err res = flashReadBlock(blk_addr, blk_len, buf);
 
-  return (USBD_OK);
+  return (res == SFUD_SUCCESS) ? USBD_OK : USBD_FAIL;
   /* USER CODE END 6 */
 }
 
@@ -254,10 +253,9 @@ int8_t STORAGE_Write_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t b
   uint32_t len = blk_len * flashGetBlockSize();
 
   printf("[MSC] WRITE blk_addr: %4lu, blk_len: %2u, addr: %8lu, len: %lu\n", blk_addr, blk_len, startAddr, len);
-  // flashWrite(startAddr, len, buf);
-  flashWriteBlock(blk_addr, blk_len, buf);
+  sfud_err res = flashWriteBlock(blk_addr, blk_len, buf);
 
-  return (USBD_OK);
+  return (res == SFUD_SUCCESS) ? USBD_OK : USBD_FAIL;
   /* USER CODE END 7 */
 }
 

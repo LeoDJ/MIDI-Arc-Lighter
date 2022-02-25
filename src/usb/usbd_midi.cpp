@@ -62,7 +62,7 @@ USBD_ClassTypeDef USBD_MIDI = {
     NULL,
     NULL,
     NULL,                 // HS
-    USBD_MIDI_GetCfgDesc, // FS
+    NULL,                 // FS
     NULL,                 // OTHER SPEED
     NULL,                 // DEVICE_QUALIFIER
 };
@@ -172,7 +172,7 @@ void USBD_MIDI_SendPacket() {
 
 static uint8_t *USBD_MIDI_GetCfgDesc(uint16_t *length) {
     *length = sizeof(USBD_MIDI_CfgDesc);
-    return USBD_MIDI_CfgDesc;
+    return (uint8_t *)USBD_MIDI_CfgDesc;
 }
 
 // uint8_t *USBD_MIDI_GetDeviceQualifierDescriptor (uint16_t *length){

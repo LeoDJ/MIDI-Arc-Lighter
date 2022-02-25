@@ -22,12 +22,14 @@
 #define MIDI_IN_EP                      COMP_EP_IDX_MIDI_IN  /* EP1 for data IN */
 #define MIDI_OUT_EP                     COMP_EP_IDX_MIDI     /* EP1 for data OUT */
 // #define MIDI_DATA_HS_MAX_PACKET_SIZE    512  /* Endpoint IN & OUT Packet size */
-#define MIDI_DATA_FS_MAX_PACKET_SIZE    64  /* Endpoint IN & OUT Packet size */
+#define MIDI_DATA_FS_MAX_PACKET_SIZE    32  /* Endpoint IN & OUT Packet size */
 #define MIDI_CMD_PACKET_SIZE                         8  /* Control Endpoint Packet size */ 
 
 #define USB_MIDI_CONFIG_DESC_SIZ        101
 #define MIDI_DATA_IN_PACKET_SIZE        MIDI_DATA_FS_MAX_PACKET_SIZE
 #define MIDI_DATA_OUT_PACKET_SIZE       MIDI_DATA_FS_MAX_PACKET_SIZE
+
+// MIDI TX functionality currently not used, so deactivate this buffer
 #define APP_RX_DATA_SIZE                ((MIDI_DATA_FS_MAX_PACKET_SIZE) * 4) //2048->256
 
 #define MIDI_IN_FRAME_INTERVAL          1

@@ -30,8 +30,6 @@
 #include <stdarg.h>
 #include "spi.h"
 
-static char log_buf[256];
-
 void sfud_log_debug(const char *file, const long line, const char *format, ...);
 
 /**
@@ -151,12 +149,12 @@ void sfud_log_debug(const char *file, const long line, const char *format, ...) 
     va_list args;
 
     /* args point to the first variable parameter */
-    va_start(args, format);
     printf("[SFUD] (%s:%ld) ", file, line);
     /* must use vprintf to print */
-    vsnprintf(log_buf, sizeof(log_buf), format, args);
-    printf("%s\n", log_buf);
+    va_start(args, format);
+    vprintf(format, args);
     va_end(args);
+    printf("\n");
 }
 
 /**
@@ -169,10 +167,10 @@ void sfud_log_info(const char *format, ...) {
     va_list args;
 
     /* args point to the first variable parameter */
-    va_start(args, format);
     printf("[SFUD] ");
     /* must use vprintf to print */
-    vsnprintf(log_buf, sizeof(log_buf), format, args);
-    printf("%s\n", log_buf);
+    va_start(args, format);
+    vprintf(format, args);
     va_end(args);
+    printf("\n");
 }

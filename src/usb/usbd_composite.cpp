@@ -239,15 +239,15 @@ static uint8_t USBD_Composite_CfgDesc[USB_Composite_CONFIG_DESC_SIZ] = {
     0x09, 0x24, 0x03, 0x02, 0x04, 0x01, 0x01, 0x01, 0x00, // see above
 
     // Standard Bulk OUT Endpoint Descriptor
-    0x09,                   // bLength
-    USB_DESC_TYPE_ENDPOINT, // bDescriptorType
-    COMP_EP_IDX_MIDI,       // bEndpointAddress
-    0x02,                   // bmAttributes: Bulk
-    0x40,                   // wMaxPacketSize: 64
-    0x00, 
-    0x00,                   // bInterval: ignore for Bulk transfer
-    0x00,                   // bRefresh: unused
-    0x00,                   // bSynchAddress: unused
+    0x09,                               // bLength
+    USB_DESC_TYPE_ENDPOINT,             // bDescriptorType
+    COMP_EP_IDX_MIDI,                   // bEndpointAddress
+    0x02,                               // bmAttributes: Bulk
+    LOBYTE(MIDI_DATA_OUT_PACKET_SIZE),  // wMaxPacketSize: 64
+    HIBYTE(MIDI_DATA_OUT_PACKET_SIZE),
+    0x00,                               // bInterval: ignore for Bulk transfer
+    0x00,                               // bRefresh: unused
+    0x00,                               // bSynchAddress: unused
     
     // Class-specific MS Bulk OUT Endpoint Descriptor (midi10.pdf, B.5.2)
     0x05,   // bLength
@@ -257,15 +257,15 @@ static uint8_t USBD_Composite_CfgDesc[USB_Composite_CONFIG_DESC_SIZ] = {
     0x01,   // BaAssocJackID(1): ID of the Embedded MIDI IN Jack: 1
 
     // Standard Bulk IN Endpoint Descriptor
-    0x09,                   // bLength
-    USB_DESC_TYPE_ENDPOINT, // bDescriptorType
-    COMP_EP_IDX_MIDI_IN,    // bEndpointAddress
-    0x02,                   // bmAttributes: Bulk, not shared
-    0x40,                   // wMaxPacketSize: 64
-    0x00,
-    0x00,                   // bInterval: ignore for Bulk transfer
-    0x00,                   // bRefresh: unused
-    0x00,                   // bSynchAddress: unused
+    0x09,                               // bLength
+    USB_DESC_TYPE_ENDPOINT,             // bDescriptorType
+    COMP_EP_IDX_MIDI_IN,                // bEndpointAddress
+    0x02,                               // bmAttributes: Bulk, not shared
+    LOBYTE(MIDI_DATA_IN_PACKET_SIZE),   // wMaxPacketSize: 64
+    HIBYTE(MIDI_DATA_IN_PACKET_SIZE),
+    0x00,                               // bInterval: ignore for Bulk transfer
+    0x00,                               // bRefresh: unused
+    0x00,                               // bSynchAddress: unused
     
     // Class-specific MS Bulk IN Endpoint Descriptor (midi10.pdf, B.6.2)
     0x05,   // bLength

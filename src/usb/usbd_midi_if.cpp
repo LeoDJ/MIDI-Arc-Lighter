@@ -17,7 +17,7 @@ void (*cbPitchBend)(uint8_t ch, uint16_t value);
 
 USBD_MIDI_ItfTypeDef USBD_MIDI_Interface_fops_FS = {
     midiRx, 
-    midiTx
+    NULL //midiTx // TX isn't actually used rn, it'd need an overhaul anyways
 };
 
 static uint8_t ringbuf_buf[MIDI_RINGBUF_SIZE];
@@ -48,14 +48,14 @@ static uint16_t midiRx(uint8_t *msg, uint16_t length) {
 
 static uint16_t midiTx(uint8_t *msg, uint16_t length) {
     uint32_t i = 0;
-    while (i < length) {
+    /*while (i < length) {
         APP_Rx_Buffer[APP_Rx_ptr_in] = *(msg + i);
         APP_Rx_ptr_in++;
         i++;
         if (APP_Rx_ptr_in == APP_RX_DATA_SIZE) {
             APP_Rx_ptr_in = 0;
         }
-    }
+    }*/
     return USBD_OK;
 }
 

@@ -113,10 +113,11 @@ USBD_ClassTypeDef  USBD_MSC =
   NULL, /*SOF */
   NULL,
   NULL,
-  USBD_MSC_GetHSCfgDesc,
-  USBD_MSC_GetFSCfgDesc,
-  USBD_MSC_GetOtherSpeedCfgDesc,
-  USBD_MSC_GetDeviceQualifierDescriptor,
+  // all descriptors aren't used, as they've been replaced with the composite device descriptor
+  NULL, //USBD_MSC_GetHSCfgDesc,
+  NULL, //USBD_MSC_GetFSCfgDesc,
+  NULL, //USBD_MSC_GetOtherSpeedCfgDesc,
+  NULL, //USBD_MSC_GetDeviceQualifierDescriptor,
 };
 
 /* USB Mass storage device Configuration Descriptor */

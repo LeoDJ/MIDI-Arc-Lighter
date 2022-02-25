@@ -32,6 +32,17 @@
  * intended.
  */
 
+// actual size is 1 byte smaller than the given capacity (one byte is used for detecting the full condition)
+ringbuf_static_t
+ringbuf_new_static(uint8_t *buf, size_t capacity) {
+    ringbuf_static_t rb = {};
+    rb.size = capacity;
+    rb.buf = buf;
+    ringbuf_reset(&rb);
+    return rb;
+
+}
+
 ringbuf_t
 ringbuf_new(size_t capacity)
 {

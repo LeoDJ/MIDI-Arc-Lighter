@@ -20,10 +20,14 @@ USBD_MIDI_ItfTypeDef USBD_MIDI_Interface_fops_FS = {
     midiTx
 };
 
+static uint8_t ringbuf_buf[MIDI_RINGBUF_SIZE];
+static ringbuf_static_t ringbuf_static;
 static ringbuf_t ringBuf;
 
 void midiInit() {
-    ringBuf = ringbuf_new(MIDI_RINGBUF_SIZE);
+    // ringBuf = ringbuf_new(MIDI_RINGBUF_SIZE);
+    ringbuf_static = ringbuf_new_static(ringbuf_buf, sizeof(ringbuf_buf));
+    ringBuf = &ringbuf_static;
 }
 
 static uint16_t midiRx(uint8_t *msg, uint16_t length) {

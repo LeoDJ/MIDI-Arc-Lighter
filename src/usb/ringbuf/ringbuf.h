@@ -35,12 +35,12 @@
 #include <sys/types.h>
 
 
-struct ringbuf_s
+typedef struct ringbuf_s
 {
     uint8_t *buf;
     uint8_t *head, *tail;
     size_t size;
-};
+} ringbuf_static_t;
 
 typedef struct ringbuf_s *ringbuf_t;
 
@@ -54,6 +54,16 @@ typedef struct ringbuf_s *ringbuf_t;
  */
 ringbuf_t
 ringbuf_new(size_t capacity);
+
+/*
+ * Create a new ring buffer with the given capacity (minus one or 
+ * more bytes for internal bookkeeping)
+ * Note: You'll need to provide your own buffer.
+ *
+ * Returns the ring buffer object.
+ */
+ringbuf_static_t
+ringbuf_new_static(uint8_t *buf, size_t capacity);
 
 /*
  * The size of the internal buffer, in bytes. One or more bytes may be

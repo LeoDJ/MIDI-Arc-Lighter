@@ -6,6 +6,14 @@
 
 
 int MidiFile::openFile(const char* path) {
+    // reset relevant internal variables
+    _curPlaying = false;
+    _curMidiTick = 0;
+    _lastTempoChangeTick = 0;
+    _usPerQuarter = 500000;
+    _finishedTracks = 0;
+    calcTickTime();
+
     printf("[MIDIF] Opening file %s\n", path);
     FRESULT res = f_open(&_midiFile, path, FA_READ);
     if (res != FR_OK) {
@@ -35,8 +43,10 @@ int MidiFile::closeFile() {
 }
 
 void MidiFile::play() {
-    _lastTempoChangeTime = HAL_GetTick();
-    _curPlaying = true;
+    if (!_curPlaying) {
+        _lastTempoChangeTime = HAL_GetTick();
+        _curPlaying = true;
+    }
 }
 void MidiFile::pause() {
     // _lastTempoChangeTime = HAL_GetTick(); // TODO: time calculation

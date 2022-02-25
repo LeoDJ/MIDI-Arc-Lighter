@@ -69,21 +69,29 @@ int main(void) {
     flashLs("");
     flashPrintFile("/HELLOW~1.TXT");
 
-    MidiFile mf;
+    static MidiFile mf;
     // mf.openFile("/_HE'SA~1.MID");
-    mf.openFile("/GRAVIT~2.MID");
+    // mf.openFile("/GRAVIT~2.MID");
     // mf.openFile("/FLIGHT~1.MID");
-    // mf.openFile("/_TETRIS.MID");
+    mf.openFile("/_TETRIS.MID");
 
     // bool tonePlaying = false;
 
-    HAL_Delay(2000);
-    mf.play();
+    // HAL_Delay(2000);
+    // mf.play();
+
+    // printf("[MAIN] Free Heap: %d\n", estimateFreeHeap(16));
 
     while (1) {
         midiLoop();     // parse midi messages and call handler callbacks
         midiHandlerArpLoop();
         mf.process();
+
+        // start song on button press
+        if (HAL_GPIO_ReadPin(BUTTON_GPIO_Port, BUTTON_Pin)) {
+            // calling this multiple times shouldn't be an issue
+            mf.play();
+        }
 
         // dumb test code, turn on arc at 440Hz on button press
         // if (HAL_GPIO_ReadPin(BUTTON_GPIO_Port, BUTTON_Pin)) {

@@ -1,6 +1,8 @@
 #include <stdint.h>
+#include <stddef.h>
 
 int estimateFreeHeap(int allocSize);
+void printBuf(uint8_t *buf, size_t len);
 
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 #define htons(n) (n)

@@ -88,7 +88,7 @@ void MidiFile::handleEvent(midiTrackEvent_t evt) {
                         case 0x51: {        // Set Tempo
                             if (evt.length == 3) {
                                 _usPerQuarter = evt.buf[0] << 16 | evt.buf[1] << 8 | evt.buf[2];
-                                printf("(%8ld) [MIDIF] Event: SetTemp %6d (%02X %02X %02X)\n", HAL_GetTick(), _usPerQuarter, evt.buf[0], evt.buf[1], evt.buf[2]);
+                                printf("(%8ld) [MIDIF] Event: SetTemp %6ld (%02X %02X %02X)\n", HAL_GetTick(), _usPerQuarter, evt.buf[0], evt.buf[1], evt.buf[2]);
                                 calcTickTime();
                             }    
                             break;
@@ -126,7 +126,7 @@ void MidiFile::process() {
                 handleEvent(_trackStatus[i].evt);
                 printf("Finished parsing Event\n");
                 _trackStatus[i].evt = _trackParser[i]->getNextEvent();  // fetch upcoming event
-                printf("(%8ld) [MIDIF] Track %d cache event - dt: %5ld, status: %02X, curTick: %d, nextTick: %d\n", HAL_GetTick(), i, _trackStatus[i].evt.deltaT, _trackStatus[i].evt.statusByte, _curMidiTick, nextTrackMidiTick);
+                printf("(%8ld) [MIDIF] Track %d cache event - dt: %5ld, status: %02X, curTick: %ld, nextTick: %ld\n", HAL_GetTick(), i, _trackStatus[i].evt.deltaT, _trackStatus[i].evt.statusByte, _curMidiTick, nextTrackMidiTick);
                 _trackStatus[i].curMidiTick = nextTrackMidiTick;
             }
         }
@@ -214,8 +214,7 @@ int MidiFile::parseHeader() {
         calcTickTime();
     }
 
-    // find tracks
-    // memset(tracks, 0, sizeof(tracks));
+    // find tracks and generate track parser instances
     clearTrackParsers();
     for (int i = 0; i < _numTracks; i++) {
         midiChunk_t trackChunkHeader = readChunkHeader();
@@ -228,7 +227,10 @@ int MidiFile::parseHeader() {
         uint32_t length = trackChunkHeader.length;
         printf("[MIDIF] Init track parser %d, start: %ld, len: %ld\n", i, startFilePos, length);
         fflush(stdout);
-        _trackParser[i] = new MidiFile_TrackParser(&_midiFile, startFilePos, length);
+
+        // give track parsers an offset into a statically allocated buffer, to avoid more dynamic memory allocation, but still maximize buffer size per track
+        uint32_t bufLenPerTrack = MIDI_TRACK_READ_BUF_SIZE / _numTracks;
+        _trackParser[i] = new MidiFile_TrackParser(&_midiFile, startFilePos, length, &_trackReadBuf[bufLenPerTrack * i], bufLenPerTrack);
         _trackStatus[i].evt = _trackParser[i]->getNextEvent();  // get initial event
 
         // calculate offset to next chunk and seek to that

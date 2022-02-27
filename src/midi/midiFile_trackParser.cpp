@@ -3,20 +3,35 @@
 #include <stdlib.h>
 #include "util.h"
 
-MidiFile_TrackParser::MidiFile_TrackParser(FIL *midiFile, uint32_t startPos, uint32_t len) {
+MidiFile_TrackParser::MidiFile_TrackParser(FIL *midiFile, uint32_t startPos, uint32_t len, uint8_t *readBuf, size_t readBufLen) {
     _midiFile = midiFile;
     _startFilePos = startPos;
     _length = len;
     _curFilePos = _startFilePos;
+    _readBuf = readBuf;
+    _readBufLen = readBufLen;
+    readFileIntoBuffer();   // initialize read buffer contents
+}
+
+void MidiFile_TrackParser::readFileIntoBuffer() {
+    uint32_t remainingFileLength = _length - (_curFilePos - _startFilePos);
+    uint8_t bytesToRead = (remainingFileLength < _readBufLen) ? remainingFileLength : _readBufLen;
+    // end of buffer detection is done at getNextEvent()
+
+    f_lseek_retry(_midiFile, _curFilePos);  // restore file position
+
+    UINT readBytes;
+    f_read_retry(_midiFile, _readBuf, bytesToRead, &readBytes);
+
+    _curFilePos = _midiFile->fptr;          // save file position
 }
 
 // read single byte from file
-// TODO: optimize read accesses by reading more bytes at once and seek back?
 uint8_t MidiFile_TrackParser::readByte() {
-    uint8_t val;
-    UINT readBytes;
-    f_read_retry(_midiFile, &val, 1, &readBytes);    // TODO: error handling?
-    return val;
+    if (_readBufPos >= _readBufLen) {
+        readFileIntoBuffer();
+    }
+    return _readBuf[_readBufPos++];
 }
 
 // read variable-length quantity
@@ -36,27 +51,18 @@ uint32_t MidiFile_TrackParser::readVarLen() {
 }
 
 midiTrackEvent_t MidiFile_TrackParser::getNextEvent() {
-    if (_curFilePos >= _startFilePos + _length) {
+    if (_curFilePos - (_readBufLen - _readBufPos) >= _startFilePos + _length) {
         midiTrackEvent_t evt = {0};
         evt.statusByte = 0; // indicate end of file by zero status byte
         return evt;
     }
-
-    f_lseek_retry(_midiFile, _curFilePos);    // restore file position
 
     // read delta time
     uint32_t deltaT = readVarLen();
     midiTrackEvent_t evt = parseEvent();
     evt.deltaT = deltaT;
 
-    _curFilePos = _midiFile->fptr;      // save file position
     return evt;
-}
-
-void printBuf(uint8_t *buf, size_t len) {
-    for (size_t i = 0; i < len; i++) {
-        printf("%02X ", buf[i]);
-    }
 }
 
 midiTrackEvent_t MidiFile_TrackParser::parseEvent() {

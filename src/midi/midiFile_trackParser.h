@@ -27,17 +27,21 @@ typedef struct {
 
 class MidiFile_TrackParser {
     public:
-    MidiFile_TrackParser(FIL *midiFile, uint32_t startPos, uint32_t len);
+    MidiFile_TrackParser(FIL *midiFile, uint32_t startPos, uint32_t len, uint8_t *readBuf, size_t readBufLen);
     midiTrackEvent_t getNextEvent();    // don't forget to free evt.buf if exists!
 
     private:
     midiTrackEvent_t parseEvent();
     uint32_t readVarLen();
     uint8_t readByte();
+    void readFileIntoBuffer();
 
     FIL *_midiFile;
     uint32_t _startFilePos;     // offset in file
     uint32_t _length;           // length of track
     uint32_t _curFilePos;       // current position in file
     uint8_t _prevStatusByte;    // save previous status byte for running status functionality
+    uint8_t *_readBuf;
+    size_t _readBufLen;
+    uint8_t _readBufPos;
 };

@@ -1,9 +1,10 @@
 #include "midiFile_trackParser.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/param.h>
 #include "util.h"
 
-MidiFile_TrackParser::MidiFile_TrackParser(FIL *midiFile, uint32_t startPos, uint32_t len, uint8_t *readBuf, size_t readBufLen) {
+MidiFile_TrackParser::MidiFile_TrackParser(FIL *midiFile, uint32_t startPos, uint32_t len, uint8_t *readBuf, uint16_t readBufLen) {
     _midiFile = midiFile;
     _startFilePos = startPos;
     _length = len;
@@ -14,14 +15,15 @@ MidiFile_TrackParser::MidiFile_TrackParser(FIL *midiFile, uint32_t startPos, uin
 }
 
 void MidiFile_TrackParser::readFileIntoBuffer() {
-    uint32_t remainingFileLength = _length - (_curFilePos - _startFilePos);
-    uint8_t bytesToRead = (remainingFileLength < _readBufLen) ? remainingFileLength : _readBufLen;
+    uint32_t remainingTrackLength = _length - (_curFilePos - _startFilePos);
+    uint8_t bytesToRead = MIN(remainingTrackLength, _readBufLen);
     // end of buffer detection is done at getNextEvent()
 
     f_lseek_retry(_midiFile, _curFilePos);  // restore file position
 
-    UINT readBytes;
-    f_read_retry(_midiFile, _readBuf, bytesToRead, &readBytes);
+    UINT bytesRead;
+    f_read_retry(_midiFile, _readBuf, bytesToRead, &bytesRead);
+    _bytesInReadBuf = bytesRead;
 
     _curFilePos = _midiFile->fptr;          // save file position
 }
@@ -30,8 +32,45 @@ void MidiFile_TrackParser::readFileIntoBuffer() {
 uint8_t MidiFile_TrackParser::readByte() {
     if (_readBufPos >= _readBufLen) {
         readFileIntoBuffer();
+        _readBufPos = 0;
     }
     return _readBuf[_readBufPos++];
+}
+
+void MidiFile_TrackParser::skipBytes(uint32_t len) {
+    if (len > _readBufLen) {
+        uint32_t bytesLeftInBuf = _readBufLen - _readBufPos - 1;
+        f_lseek_retry(_midiFile, _curFilePos - bytesLeftInBuf + len);
+        _curFilePos = _midiFile->fptr;
+        // refill buffer
+        _readBufPos = 0;
+        readFileIntoBuffer();
+    }
+    else {
+        for (uint32_t i = 0; i < len; i++) {
+            readByte();
+        }
+    }
+}
+
+void MidiFile_TrackParser::readBytes(uint8_t *dstBuf, uint32_t len) {
+    if (len > _readBufLen) {
+        uint32_t bytesLeftInBuf = _readBufLen - _readBufPos - 1;
+        // seek back
+        f_lseek_retry(_midiFile, _curFilePos - bytesLeftInBuf);
+        UINT bytesRead;
+        f_read_retry(_midiFile, dstBuf, len, &bytesRead);
+        _curFilePos = _midiFile->fptr;
+
+        // refill buffer
+        _readBufPos = 0;
+        readFileIntoBuffer();
+    }
+    else {
+        for (uint32_t i = 0; i < len; i++) {
+            dstBuf[i] = readByte();
+        }
+    }
 }
 
 // read variable-length quantity
@@ -51,9 +90,13 @@ uint32_t MidiFile_TrackParser::readVarLen() {
 }
 
 midiTrackEvent_t MidiFile_TrackParser::getNextEvent() {
-    if (_curFilePos - (_readBufLen - _readBufPos) >= _startFilePos + _length) {
+    // printf("(%8ld) [MIDIFTP] _curFilePos: %ld, _readBufPos: %d\n", HAL_GetTick(), _curFilePos, _readBufPos);
+    uint32_t trackEnd = _startFilePos + _length;
+    uint32_t curReadPos = _curFilePos - (MIN(_bytesInReadBuf, _length) - _readBufPos - 1);  // get read position regarding remaining bytes in buffer
+    if (curReadPos >= trackEnd) {
         midiTrackEvent_t evt = {0};
-        evt.statusByte = 0; // indicate end of file by zero status byte
+        evt.statusByte = 0; // indicate end of track by zero status byte
+        // printf("(%8ld) [MIDIFTP] END OF TRACK LENGTH\n", HAL_GetTick());
         return evt;
     }
 
@@ -99,13 +142,12 @@ midiTrackEvent_t MidiFile_TrackParser::parseEvent() {
             // printf("[MIDIF] Free Heap: %d\n", estimateFreeHeap(16));
             if (evt.buf == NULL) {  // not enough memory
                 // seek file to next event
-                f_lseek_retry(_midiFile, _midiFile->fptr + evt.length);
+                skipBytes(evt.length);
                 // signal read error with zero length
                 evt.length = 0;
             }
             else {
-                UINT readLen;
-                f_read_retry(_midiFile, evt.buf, evt.length, &readLen);
+                readBytes(evt.buf, evt.length);
             }
             break;
         }

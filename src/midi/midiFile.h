@@ -4,7 +4,7 @@
 #include "midiFile_trackParser.h"
 
 #define MAX_MIDI_TRACKS             8
-#define MIDI_TRACK_READ_BUF_SIZE    64  // gets divided between the number of tracks of the current file
+#define MIDI_TRACK_READ_BUF_SIZE    128  // gets divided between the number of tracks of the current file
 
 typedef struct {
     char type[4];

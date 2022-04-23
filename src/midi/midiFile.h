@@ -34,6 +34,7 @@ class MidiFile {
     void process();
     void play();
     void pause();
+    bool isCurrentlyPlaying();
 
     private:
     void clearTrackParsers();

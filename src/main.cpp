@@ -70,10 +70,17 @@ int main(void) {
     flashPrintFile("/HELLOW~1.TXT");
 
     static MidiFile mf;
-    // mf.openFile("/_HE'SA~1.MID");
-    // mf.openFile("/GRAVIT~2.MID");
-    // mf.openFile("/FLIGHT~1.MID");
-    mf.openFile("/_TETRIS.MID");
+    char *midiFiles[] = {
+        "/_HE'SA~1.MID",
+        "/GRAVIT~2.MID",
+        "/FLIGHT~1.MID",
+        "/THROUG~1.MID",
+        "/PINKPA~1.MID",
+        "/_TETRIS.MID",
+        "/NOKIA_~1.MID",
+        "/MEGALO~1.MID"
+    };
+    static const int midiFilesNum = sizeof(midiFiles) / sizeof(midiFiles[0]);
 
     // bool tonePlaying = false;
 
@@ -90,7 +97,10 @@ int main(void) {
         // start song on button press
         if (HAL_GPIO_ReadPin(BUTTON_GPIO_Port, BUTTON_Pin)) {
             // calling this multiple times shouldn't be an issue
-            mf.play();
+            if(!mf.isCurrentlyPlaying()) {
+                mf.openFile(midiFiles[HAL_GetTick()/20 % midiFilesNum]);
+                mf.play();
+            }
         }
 
         // dumb test code, turn on arc at 440Hz on button press

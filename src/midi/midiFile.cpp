@@ -53,6 +53,10 @@ void MidiFile::pause() {
     _curPlaying = false;
 }
 
+bool MidiFile::isCurrentlyPlaying() {
+    return _curPlaying;
+}
+
 void MidiFile::handleEvent(midiTrackEvent_t evt) {
     switch (evt.command) {
         case 0:         // invalid event or end of track

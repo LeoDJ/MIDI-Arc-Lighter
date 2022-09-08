@@ -5,6 +5,7 @@
 #include <sys/unistd.h>
 
 #include "adc.h"
+#include "dma.h"
 #include "gpio.h"
 #include "tim.h"
 #include "usb_device.h"
@@ -20,6 +21,7 @@
 #include "midiHandler.h"
 #include "flash.h"
 #include "midiFile.h"
+#include "analog.h"
 
 
 extern "C" {
@@ -33,10 +35,11 @@ extern "C" {
             return -1;
         }
 
-        HAL_StatusTypeDef status = HAL_UART_Transmit(&PRINTF_UART, (uint8_t *)data, len, 1000);
-        return (status == HAL_OK ? len : 0);
-        // uint8_t status = CDC_Transmit_FS((uint8_t *)data, len);
-        // return (status == USBD_OK ? len : 0);
+        // HAL_StatusTypeDef status = HAL_UART_Transmit(&PRINTF_UART, (uint8_t *)data, len, 1000);
+        // return (status == HAL_OK ? len : 0);
+        // HAL_GPIO_TogglePin(LED_2_B_GPIO_Port, LED_2_B_Pin);
+        uint8_t statusU = CDC_Transmit_FS((uint8_t *)data, len);
+        return (statusU == USBD_OK ? len : 0);
     }
 }
 
@@ -45,6 +48,7 @@ int main(void) {
     SystemClock_Config();
     
     MX_GPIO_Init();
+    MX_DMA_Init();
     MX_ADC_Init();
     MX_TIM1_Init();
     MX_TIM14_Init();
@@ -58,6 +62,10 @@ int main(void) {
 
     HAL_Delay(50); // delay needed for new device to enumerate after DFU upload
     MX_USB_DEVICE_Init();
+
+    HAL_ADCEx_Calibration_Start(&hadc);
+
+    HAL_Delay(1000);
 
     printf("Hello World!\n");
 
@@ -82,12 +90,15 @@ int main(void) {
     };
     static const int midiFilesNum = sizeof(midiFiles) / sizeof(midiFiles[0]);
 
+    analogInit();
     // bool tonePlaying = false;
 
     // HAL_Delay(2000);
     // mf.play();
 
     // printf("[MAIN] Free Heap: %d\n", estimateFreeHeap(16));
+
+    uint32_t lastTest = 0;
 
     while (1) {
         midiLoop();     // parse midi messages and call handler callbacks
@@ -101,6 +112,11 @@ int main(void) {
                 mf.openFile(midiFiles[HAL_GetTick()/20 % midiFilesNum]);
                 mf.play();
             }
+        }
+
+        if (HAL_GetTick() - lastTest > 1000) {
+            lastTest = HAL_GetTick();
+            printf(".\n");
         }
 
         // dumb test code, turn on arc at 440Hz on button press

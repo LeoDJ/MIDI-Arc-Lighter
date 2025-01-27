@@ -2,7 +2,7 @@
 
 A cheap chinese dual arc lighter, modified with a custom PCB and the power of an STM32F072 to play music with the arcs.
 
-Follow the [Twitter Build Thread](https://twitter.com/_LeoDJ/status/1379586092094087168) for the newest developments and videos of the lighter in action.
+Follow the [Mastodon Build Thread](https://chaos.social/@LeoDJ/106111645879024235) for the newest developments and videos of the lighter in action.
 
 The project has developed into a playground for implementing various USB features and modifying the default STM USB libraries way beyond what they were meant for*.
 
